@@ -521,6 +521,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let reloadTimer = 0;
   const reloadDuration = 1.35;
   let recoil = 0;
+  let sprinting = false;
   let hudTimer = 0;
   let hitMarker = 0;
   let killConfirm = 0;
@@ -588,10 +589,16 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   };
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.code === "KeyR" && reloadTimer <= 0 && ammo < 30) startReload();
-    if (event.code === "ShiftLeft" || event.code === "ShiftRight") camera.speed = 0.38;
+    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+      sprinting = true;
+      camera.speed = 0.38;
+    }
   };
   const onKeyUp = (event: KeyboardEvent) => {
-    if (event.code === "ShiftLeft" || event.code === "ShiftRight") camera.speed = 0.22;
+    if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+      sprinting = false;
+      camera.speed = 0.22;
+    }
   };
   canvas.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKeyDown);
@@ -802,9 +809,11 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     killConfirm = Math.max(0, killConfirm - delta * 1.8);
     damagePulse = Math.max(0, damagePulse - delta * 2.5);
     recoil = Math.max(0, recoil - delta * 1.8);
-    const sway = Math.sin(performance.now() * 0.004) * 0.006;
+    const sway = Math.sin(performance.now() * (sprinting ? 0.009 : 0.004)) * (sprinting ? 0.018 : 0.006);
+    const bob = Math.abs(Math.cos(performance.now() * (sprinting ? 0.014 : 0.006))) * (sprinting ? 0.018 : 0.004);
     weaponRoot.position.x = 0.42 + sway;
-    weaponRoot.position.y = -0.54 - recoil;
+    weaponRoot.position.y = (sprinting ? -0.72 : -0.54) - recoil + bob;
+    weaponRoot.rotation.z = sprinting ? -0.08 : 0;
     if (!gameOver) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
