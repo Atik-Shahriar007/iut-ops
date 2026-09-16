@@ -529,6 +529,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const reloadDuration = 1.35;
   let recoil = 0;
   let sprinting = false;
+  let footstepTimer = 0;
+  let lastFootstepPosition = camera.position.clone();
   let hudTimer = 0;
   let hitMarker = 0;
   let killConfirm = 0;
@@ -723,6 +725,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const start = kind === "heavy" ? 92 : kind === "scout" ? 210 : 135;
     playTone(start, start * 0.42, kind === "heavy" ? 0.18 : 0.13, kind === "heavy" ? 0.045 : 0.026);
   }
+  function playFootstepSound() {
+    playTone(sprinting ? 92 : 118, sprinting ? 48 : 64, sprinting ? 0.09 : 0.07, sprinting ? 0.022 : 0.014);
+  }
   function playHitSound() { playTone(720, 240, 0.08, 0.025); }
 
   function updateEnemies(delta: number) {
@@ -821,6 +826,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
+    const movedDistance = Vector3.Distance(camera.position, lastFootstepPosition);
+    if (movedDistance > 0.012) {
+      footstepTimer -= delta;
+      if (footstepTimer <= 0) {
+        playFootstepSound();
+        footstepTimer = sprinting ? 0.28 : 0.46;
+      }
+      lastFootstepPosition.copyFrom(camera.position);
+    }
     const waterTime = performance.now() * 0.001;
     animatedWater.forEach((glint) => {
       const meta = glint.metadata as { baseX: number; baseZ: number; phase: number };
