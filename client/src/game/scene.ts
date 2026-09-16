@@ -107,6 +107,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   waterGlint.emissiveColor = new Color3(0.04, 0.16, 0.15);
   waterGlint.alpha = 0.28;
   waterGlint.backFaceCulling = false;
+  const animatedWater: Mesh[] = [];
 
   const dark = new StandardMaterial("arch-shadow", scene);
   dark.diffuseColor = new Color3(0.18, 0.075, 0.05);
@@ -338,12 +339,16 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     for (const z of [-10, -2, 6, 14]) {
       const glint = box("water-surface-glint", new Vector3(side, 0.3, z), { width: 7.2, height: 0.025, depth: 0.12 }, waterGlint);
       glint.rotation.y = side < 0 ? -0.12 : 0.12;
+      glint.metadata = { baseX: side, baseZ: z, phase: z * 0.17 + side * 0.03 };
+      animatedWater.push(glint);
       glint.isPickable = false;
     }
   }
   for (const x of [-10, 0, 10]) {
     const glint = box("water-back-glint", new Vector3(x, 0.3, -15), { width: 0.12, height: 0.025, depth: 3.4 }, waterGlint);
     glint.rotation.y = x * 0.01;
+    glint.metadata = { baseX: x, baseZ: -15, phase: x * 0.13 };
+    animatedWater.push(glint);
     glint.isPickable = false;
   }
   createBridge(0, 1, 6.6, 40);
@@ -755,6 +760,14 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
+    const waterTime = performance.now() * 0.001;
+    animatedWater.forEach((glint) => {
+      const meta = glint.metadata as { baseX: number; baseZ: number; phase: number };
+      glint.position.x = meta.baseX + Math.sin(waterTime * 0.7 + meta.phase) * 0.18;
+      glint.position.z = meta.baseZ + Math.cos(waterTime * 0.55 + meta.phase) * 0.08;
+      glint.scaling.x = 0.82 + Math.sin(waterTime * 1.15 + meta.phase) * 0.16;
+      glint.visibility = 0.72 + Math.sin(waterTime * 1.4 + meta.phase) * 0.2;
+    });
     hitMarker = Math.max(0, hitMarker - delta * 5);
     killConfirm = Math.max(0, killConfirm - delta * 1.8);
     damagePulse = Math.max(0, damagePulse - delta * 2.5);
