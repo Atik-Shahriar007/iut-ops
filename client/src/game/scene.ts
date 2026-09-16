@@ -181,6 +181,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
         const offset = -width / 2 + 1.6 + i * ((width - 3) / Math.max(1, count - 1));
         const win = box(`arch-window-${parentX}-${floor}-${i}`, side ? new Vector3(frontZ, y, parentX + offset) : new Vector3(parentX + offset, y, frontZ), side ? { width: 0.13, height: 1.55, depth: 1.05 } : { width: 1.05, height: 1.55, depth: 0.13 }, dark);
         win.isPickable = false;
+        if (!side) {
+          const trimLeft = box(`arch-window-trim-left-${parentX}-${floor}-${i}`, new Vector3(parentX + offset - 0.55, y + 0.08, frontZ - 0.08), { width: 0.12, height: 1.25, depth: 0.18 }, trim);
+          const trimRight = box(`arch-window-trim-right-${parentX}-${floor}-${i}`, new Vector3(parentX + offset + 0.55, y + 0.08, frontZ - 0.08), { width: 0.12, height: 1.25, depth: 0.18 }, trim);
+          const trimPeakLeft = box(`arch-window-trim-peak-left-${parentX}-${floor}-${i}`, new Vector3(parentX + offset - 0.3, y + 0.8, frontZ - 0.08), { width: 0.12, height: 0.82, depth: 0.18 }, trim);
+          const trimPeakRight = box(`arch-window-trim-peak-right-${parentX}-${floor}-${i}`, new Vector3(parentX + offset + 0.3, y + 0.8, frontZ - 0.08), { width: 0.12, height: 0.82, depth: 0.18 }, trim);
+          trimPeakLeft.rotation.z = -Math.PI / 4;
+          trimPeakRight.rotation.z = Math.PI / 4;
+          [trimLeft, trimRight, trimPeakLeft, trimPeakRight].forEach((piece) => { piece.isPickable = false; });
+        }
       }
     }
   }
