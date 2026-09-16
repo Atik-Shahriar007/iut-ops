@@ -88,7 +88,7 @@ export default function App() {
         <div className={`controls-hint ${hud.reloading ? "is-reloading" : ""}`}><b>W A S D</b> MOVE <b>SHIFT</b> SPRINT <b>R</b> RELOAD <b>LMB</b> FIRE</div>
         <div className="ammo-block">
           <div className="ammo-main">{String(hud.ammo).padStart(2, "0")}</div>
-          <div className="ammo-reserve">/ ∞ <span>{hud.reloading ? "RELOADING" : "9MM · UNLIMITED"}</span></div>
+          <div className="ammo-reserve">/ ∞ <span>{hud.reloading ? "RELOADING" : "5.56 · UNLIMITED"}</span></div>
         </div>
       </section>
 

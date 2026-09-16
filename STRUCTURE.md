@@ -6,4 +6,4 @@
 - `client/src/index.css`: game UI, reticle, HUD, overlays, and responsive styling.
 - `PLAN.md`, `MEMORY.md`, `ASSETS.md`: resumability and asset records.
 
-Gameplay remains inside `scene.ts` as plain TypeScript and does not depend on React. React provides the canvas and HTML overlay only. The scene uses procedural Babylon meshes for campus geometry and an uploaded generated brick texture for large architectural surfaces.
+Gameplay remains inside `scene.ts` as plain TypeScript and does not depend on React. React provides the canvas and HTML overlay only. The scene uses procedural Babylon meshes for the screenshot-target campus composition, including a central pointed gateway, water courts, palm rows, and a rifle-style first-person weapon. Main surfaces currently use tuned clean albedo materials for readable daytime rendering; the uploaded brick texture remains available for a later detail-texture pass.

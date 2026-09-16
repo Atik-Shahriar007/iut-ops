@@ -54,9 +54,9 @@ const BRICK_URL = "/manus-storage/iut-brick-texture_ec5cddf1.png";
 
 export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement, callbacks: Callbacks): Promise<GameHandle> {
   const scene = new Scene(engine);
-  scene.clearColor = new Color4(0.06, 0.1, 0.12, 1);
-  scene.imageProcessingConfiguration.exposure = 1.15;
-  scene.imageProcessingConfiguration.contrast = 1.08;
+  scene.clearColor = new Color4(0.46, 0.68, 0.82, 1);
+  scene.imageProcessingConfiguration.exposure = 1.05;
+  scene.imageProcessingConfiguration.contrast = 1.04;
   scene.collisionsEnabled = true;
   scene.gravity = new Vector3(0, -0.24, 0);
 
@@ -64,7 +64,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   brickTexture.uScale = 2.5;
   brickTexture.vScale = 2.5;
   const brick = new StandardMaterial("campus-brick", scene);
-  brick.diffuseTexture = brickTexture;
+  brick.diffuseTexture = null;
+  brick.diffuseColor = new Color3(0.78, 0.3, 0.2);
   brick.specularColor = new Color3(0.12, 0.08, 0.06);
 
   const paverTexture = new Texture(BRICK_URL, scene);
@@ -72,12 +73,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   paverTexture.vScale = 42;
 
   const brickDark = new StandardMaterial("dark-brick", scene);
-  brickDark.diffuseColor = new Color3(0.36, 0.1, 0.055);
+  brickDark.diffuseColor = new Color3(0.48, 0.15, 0.09);
   brickDark.specularColor = new Color3(0.08, 0.04, 0.02);
 
   const road = new StandardMaterial("brick-paving", scene);
-  road.diffuseTexture = paverTexture;
-  road.diffuseColor = new Color3(0.48, 0.22, 0.15);
+  road.diffuseTexture = null;
+  road.diffuseColor = new Color3(0.74, 0.34, 0.22);
+  road.emissiveColor = new Color3(0.035, 0.012, 0.008);
   road.specularColor = new Color3(0.12, 0.08, 0.05);
 
   const lawn = new StandardMaterial("lawn", scene);
@@ -88,15 +90,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   trim.diffuseColor = new Color3(0.72, 0.38, 0.17);
 
   const water = new StandardMaterial("reflective-water", scene);
-  water.diffuseColor = new Color3(0.04, 0.25, 0.28);
-  water.emissiveColor = new Color3(0.015, 0.07, 0.08);
+  water.diffuseColor = new Color3(0.08, 0.3, 0.34);
+  water.emissiveColor = new Color3(0.018, 0.07, 0.08);
   water.alpha = 0.82;
   water.specularColor = new Color3(0.52, 0.65, 0.62);
   water.backFaceCulling = false;
 
   const dark = new StandardMaterial("arch-shadow", scene);
-  dark.diffuseColor = new Color3(0.035, 0.045, 0.045);
-  dark.emissiveColor = new Color3(0.01, 0.012, 0.012);
+  dark.diffuseColor = new Color3(0.18, 0.075, 0.05);
+  dark.emissiveColor = new Color3(0.05, 0.018, 0.01);
 
   const leaf = new StandardMaterial("palm-leaf", scene);
   leaf.diffuseColor = new Color3(0.04, 0.29, 0.1);
@@ -134,8 +136,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   weaponMetal.diffuseColor = new Color3(0.2, 0.22, 0.22);
   weaponMetal.specularColor = new Color3(0.7, 0.72, 0.7);
   const weaponAccent = new StandardMaterial("sidearm-accent", scene);
-  weaponAccent.diffuseColor = new Color3(0.68, 0.18, 0.08);
-  weaponAccent.emissiveColor = new Color3(0.12, 0.018, 0.006);
+  weaponAccent.diffuseColor = new Color3(0.28, 0.035, 0.018);
+  weaponAccent.emissiveColor = new Color3(0.05, 0.004, 0.002);
 
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
@@ -199,19 +201,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     box(`${name}-left`, new Vector3(position.x - 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
     box(`${name}-right`, new Vector3(position.x + 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
     box(`${name}-lintel`, new Vector3(position.x, 7.55 * scale, position.z), { width: 12.5 * scale, height: 1.9 * scale, depth: 2.1 * scale }, brick, true);
-    box(`${name}-inner-shadow`, new Vector3(position.x, 3.15 * scale, position.z - 1.08 * scale), { width: 7.5 * scale, height: 6.1 * scale, depth: 0.12 }, dark);
-    const points: Vector3[] = [];
-    for (let i = 0; i <= 18; i += 1) {
-      const t = i / 18;
-      const angle = Math.PI - t * Math.PI;
-      const x = position.x + Math.cos(angle) * 3.75 * scale;
-      const y = 3.2 * scale + Math.sin(angle) * 3.2 * scale;
-      points.push(new Vector3(x, y, position.z - 1.24 * scale));
-    }
-    const archLine = MeshBuilder.CreateLines(`${name}-arch-outline`, { points }, scene);
-    archLine.color = new Color3(0.95, 0.49, 0.25);
-    archLine.material!.fogEnabled = false;
-    return archLine;
   }
 
   function createCentralPavilion(position: Vector3) {
@@ -272,14 +261,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   createArchway("monumental-gateway", new Vector3(0, 0, -11), 1.15);
   createArchway("garden-gateway", new Vector3(0, 0, 20), 0.68);
-  createCentralPavilion(new Vector3(-4.2, 0, -3.8));
+  createCentralPavilion(new Vector3(-10.2, 0, -7.2));
 
   // Academic blocks and a residence flank reproduce the supplied red-brick silhouette.
   createBuilding("north-academic", new Vector3(-24, 0, -16), 18, 13, 9, true);
   createBuilding("south-academic", new Vector3(24, 0, -14), 17, 14, 8, true);
   createBuilding("residence-west", new Vector3(-27, 0, 12), 19, 16, 12, true);
   createBuilding("residence-east", new Vector3(27, 0, 10), 19, 16, 12, true);
-  createBuilding("central-hall", new Vector3(0, 0, -25), 15, 7, 6, false);
 
   // Low arcades and garden walls create readable cover around the arena.
   for (let i = -2; i <= 2; i += 1) {
@@ -301,33 +289,33 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   }
 
   const hemi = new HemisphericLight("warm-sky", new Vector3(0, 1, 0), scene);
-  hemi.intensity = 1.05;
+  hemi.intensity = 0.85;
   hemi.diffuse = new Color3(1, 0.82, 0.66);
   hemi.groundColor = new Color3(0.12, 0.16, 0.13);
   const sun = new DirectionalLight("sunset-sun", new Vector3(-0.4, -1, 0.3), scene);
   sun.position = new Vector3(25, 40, -30);
-  sun.intensity = 1.8;
-  sun.diffuse = new Color3(1, 0.62, 0.36);
+  sun.intensity = 1.1;
+  sun.diffuse = new Color3(1, 0.78, 0.58);
 
   const gatewayLight = new PointLight("gateway-amber", new Vector3(0, 4.5, -9.2), scene);
   gatewayLight.diffuse = new Color3(1, 0.34, 0.12);
   gatewayLight.specular = new Color3(1, 0.48, 0.2);
-  gatewayLight.intensity = 18;
+  gatewayLight.intensity = 8;
   gatewayLight.range = 18;
   const gatewayFill = new PointLight("gateway-fill", new Vector3(0, 2.8, -13), scene);
   gatewayFill.diffuse = new Color3(0.95, 0.55, 0.3);
-  gatewayFill.intensity = 8;
+  gatewayFill.intensity = 4;
   gatewayFill.range = 13;
   const courtFill = new PointLight("court-fill", new Vector3(0, 6.5, 7), scene);
   courtFill.diffuse = new Color3(1, 0.62, 0.36);
-  courtFill.intensity = 10;
+  courtFill.intensity = 5;
   courtFill.range = 28;
   const waterLightPositions = [new Vector3(-14, 2.2, -5), new Vector3(14, 2.2, -5), new Vector3(-14, 2.2, 9), new Vector3(14, 2.2, 9)];
   waterLightPositions.forEach((position, index) => {
     const waterLight = new PointLight(`water-court-glow-${index}`, position, scene);
     waterLight.diffuse = new Color3(0.1, 0.65, 0.72);
     waterLight.specular = new Color3(0.3, 0.8, 0.9);
-    waterLight.intensity = 5.5;
+    waterLight.intensity = 2.5;
     waterLight.range = 12;
   });
 
@@ -348,39 +336,47 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   camera.rotation = new Vector3(0, Math.PI, 0);
   scene.activeCamera = camera;
 
-  const weaponRoot = new TransformNode("operator-sidearm", scene);
+  const weaponRoot = new TransformNode("operator-rifle", scene);
   weaponRoot.parent = camera;
-  weaponRoot.position = new Vector3(0.38, -0.5, 1.05);
-  weaponRoot.scaling = new Vector3(0.62, 0.62, 0.62);
-  weaponRoot.rotation = new Vector3(-0.04, 0.02, 0.02);
-  const weaponFrame = MeshBuilder.CreateBox("sidearm-frame", { width: 0.3, height: 0.23, depth: 0.82 }, scene);
+  weaponRoot.position = new Vector3(0.42, -0.54, 1.02);
+  weaponRoot.scaling = new Vector3(0.72, 0.72, 0.72);
+  weaponRoot.rotation = new Vector3(-0.08, 0.02, 0.02);
+  const weaponFrame = MeshBuilder.CreateBox("rifle-receiver", { width: 0.42, height: 0.3, depth: 0.92 }, scene);
   weaponFrame.parent = weaponRoot;
-  weaponFrame.position = new Vector3(0, 0.06, 0.1);
+  weaponFrame.position = new Vector3(0, 0.08, 0.22);
   weaponFrame.material = weaponMat;
-  const weaponSlide = MeshBuilder.CreateBox("sidearm-slide", { width: 0.34, height: 0.16, depth: 0.64 }, scene);
+  const weaponSlide = MeshBuilder.CreateBox("rifle-upper", { width: 0.36, height: 0.16, depth: 0.72 }, scene);
   weaponSlide.parent = weaponRoot;
-  weaponSlide.position = new Vector3(0, 0.2, 0.05);
+  weaponSlide.position = new Vector3(0, 0.27, 0.08);
   weaponSlide.material = weaponMetal;
-  const weaponBarrel = MeshBuilder.CreateCylinder("sidearm-barrel", { diameter: 0.1, height: 0.28, tessellation: 12 }, scene);
+  const weaponHandguard = MeshBuilder.CreateBox("rifle-handguard", { width: 0.34, height: 0.22, depth: 1.22 }, scene);
+  weaponHandguard.parent = weaponRoot;
+  weaponHandguard.position = new Vector3(0, 0.18, -0.72);
+  weaponHandguard.material = weaponMat;
+  const weaponBarrel = MeshBuilder.CreateCylinder("rifle-barrel", { diameter: 0.1, height: 1.05, tessellation: 12 }, scene);
   weaponBarrel.parent = weaponRoot;
   weaponBarrel.rotation.x = Math.PI / 2;
-  weaponBarrel.position = new Vector3(0, 0.2, -0.38);
+  weaponBarrel.position = new Vector3(0, 0.22, -1.34);
   weaponBarrel.material = weaponMetal;
-  const weaponGrip = MeshBuilder.CreateBox("sidearm-grip", { width: 0.22, height: 0.58, depth: 0.25 }, scene);
+  const weaponStock = MeshBuilder.CreateBox("rifle-stock", { width: 0.34, height: 0.26, depth: 0.52 }, scene);
+  weaponStock.parent = weaponRoot;
+  weaponStock.position = new Vector3(0, 0.08, 0.86);
+  weaponStock.material = weaponMat;
+  const weaponGrip = MeshBuilder.CreateBox("rifle-grip", { width: 0.26, height: 0.62, depth: 0.3 }, scene);
   weaponGrip.parent = weaponRoot;
-  weaponGrip.position = new Vector3(0, -0.27, 0.28);
-  weaponGrip.rotation.x = -0.18;
+  weaponGrip.position = new Vector3(0, -0.3, 0.42);
+  weaponGrip.rotation.x = -0.2;
   weaponGrip.material = weaponMat;
-  const weaponSight = MeshBuilder.CreateBox("sidearm-sight", { width: 0.07, height: 0.07, depth: 0.14 }, scene);
+  const weaponSight = MeshBuilder.CreateBox("rifle-optic", { width: 0.12, height: 0.1, depth: 0.24 }, scene);
   weaponSight.parent = weaponRoot;
-  weaponSight.position = new Vector3(0, 0.3, -0.04);
-  weaponSight.material = weaponAccent;
-  const weaponMagazine = MeshBuilder.CreateBox("sidearm-magazine", { width: 0.16, height: 0.42, depth: 0.16 }, scene);
+  weaponSight.position = new Vector3(0, 0.43, -0.08);
+  weaponSight.material = weaponMetal;
+  const weaponMagazine = MeshBuilder.CreateBox("rifle-magazine", { width: 0.24, height: 0.58, depth: 0.22 }, scene);
   weaponMagazine.parent = weaponRoot;
-  weaponMagazine.position = new Vector3(0, -0.53, 0.27);
-  weaponMagazine.rotation.x = -0.18;
+  weaponMagazine.position = new Vector3(0, -0.48, 0.28);
+  weaponMagazine.rotation.x = -0.22;
   weaponMagazine.material = weaponMetal;
-  const weaponMeshes = [weaponFrame, weaponSlide, weaponBarrel, weaponGrip, weaponSight, weaponMagazine];
+  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
   let health = 100;
@@ -585,18 +581,18 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
     recoil = Math.max(0, recoil - delta * 1.8);
     const sway = Math.sin(performance.now() * 0.004) * 0.006;
-    weaponRoot.position.x = 0.38 + sway;
-    weaponRoot.position.y = -0.5 - recoil;
+    weaponRoot.position.x = 0.42 + sway;
+    weaponRoot.position.y = -0.54 - recoil;
     if (!gameOver) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
         const reloadProgress = 1 - Math.max(0, reloadTimer / reloadDuration);
-        weaponSlide.position.z = 0.05 + (reloadProgress < 0.2 ? reloadProgress * 0.35 : 0.07 - Math.max(0, reloadProgress - 0.82) * 0.35);
-        weaponMagazine.position.y = reloadProgress > 0.26 && reloadProgress < 0.68 ? -0.82 : -0.53;
+        weaponSlide.position.z = 0.08 + (reloadProgress < 0.2 ? reloadProgress * 0.35 : 0.07 - Math.max(0, reloadProgress - 0.82) * 0.35);
+        weaponMagazine.position.y = reloadProgress > 0.26 && reloadProgress < 0.68 ? -0.9 : -0.48;
         if (reloadTimer <= 0) {
           ammo = 30;
-          weaponSlide.position.z = 0.05;
-          weaponMagazine.position.y = -0.53;
+          weaponSlide.position.z = 0.08;
+          weaponMagazine.position.y = -0.48;
         }
       }
       updateEnemies(delta);
