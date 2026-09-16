@@ -732,16 +732,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     }
   }
 
-  const hudSnapshot = (): HudState => ({
-    health,
-    ammo,
-    reserve,
-    score,
-    wave,
-    enemies: enemies.length,
-    reloading: reloadTimer > 0,
-    objective: enemies.length ? "CLEAR THE CENTRAL COURT" : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND",
-    zone: Math.abs(camera.position.x) < 4 && camera.position.z < -7 && camera.position.z > -16
+  function getCurrentZone() {
+    return Math.abs(camera.position.x) < 4 && camera.position.z < -7 && camera.position.z > -16
       ? "MAIN GATEWAY"
       : Math.abs(camera.position.x) < 4 && camera.position.z >= -7 && camera.position.z <= 18
         ? "CENTRAL BRIDGE"
@@ -749,14 +741,38 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           ? "WATER COURT"
           : camera.position.z > 18
             ? "PALM AVENUE"
-            : "ACADEMIC QUADRANT",
+            : "ACADEMIC QUADRANT";
+  }
+
+  const hudSnapshot = (): HudState => {
+    const zone = getCurrentZone();
+    const zoneObjective = zone === "MAIN GATEWAY"
+      ? "REACH THE MAIN GATEWAY"
+      : zone === "CENTRAL BRIDGE"
+        ? "SECURE THE CENTRAL BRIDGE"
+        : zone === "WATER COURT"
+          ? "CLEAR THE WATER COURT"
+          : zone === "PALM AVENUE"
+            ? "PATROL PALM AVENUE"
+            : "HOLD THE ACADEMIC QUADRANT";
+    return {
+    health,
+    ammo,
+    reserve,
+    score,
+    wave,
+    enemies: enemies.length,
+    reloading: reloadTimer > 0,
+    objective: enemies.length ? zoneObjective : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND",
+    zone,
     locked: document.pointerLockElement === canvas,
     hitMarker,
     killConfirm,
     damagePulse,
     player: { x: camera.position.x, z: camera.position.z, angle: camera.rotation.y },
     radarEnemies: enemies.map((enemy) => ({ x: enemy.root.position.x, z: enemy.root.position.z })),
-  });
+    };
+  };
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
