@@ -55,6 +55,8 @@ const BRICK_URL = "/manus-storage/iut-brick-texture_ec5cddf1.png";
 export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement, callbacks: Callbacks): Promise<GameHandle> {
   const scene = new Scene(engine);
   scene.clearColor = new Color4(0.06, 0.1, 0.12, 1);
+  scene.imageProcessingConfiguration.exposure = 1.15;
+  scene.imageProcessingConfiguration.contrast = 1.08;
   scene.collisionsEnabled = true;
   scene.gravity = new Vector3(0, -0.24, 0);
 
@@ -65,11 +67,16 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   brick.diffuseTexture = brickTexture;
   brick.specularColor = new Color3(0.12, 0.08, 0.06);
 
+  const paverTexture = new Texture(BRICK_URL, scene);
+  paverTexture.uScale = 18;
+  paverTexture.vScale = 42;
+
   const brickDark = new StandardMaterial("dark-brick", scene);
   brickDark.diffuseColor = new Color3(0.36, 0.1, 0.055);
   brickDark.specularColor = new Color3(0.08, 0.04, 0.02);
 
   const road = new StandardMaterial("brick-paving", scene);
+  road.diffuseTexture = paverTexture;
   road.diffuseColor = new Color3(0.48, 0.22, 0.15);
   road.specularColor = new Color3(0.12, 0.08, 0.05);
 
@@ -85,6 +92,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   water.emissiveColor = new Color3(0.015, 0.07, 0.08);
   water.alpha = 0.82;
   water.specularColor = new Color3(0.52, 0.65, 0.62);
+  water.backFaceCulling = false;
 
   const dark = new StandardMaterial("arch-shadow", scene);
   dark.diffuseColor = new Color3(0.035, 0.045, 0.045);
@@ -202,7 +210,33 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     }
     const archLine = MeshBuilder.CreateLines(`${name}-arch-outline`, { points }, scene);
     archLine.color = new Color3(0.95, 0.49, 0.25);
+    archLine.material!.fogEnabled = false;
     return archLine;
+  }
+
+  function createCentralPavilion(position: Vector3) {
+    const body = box("central-pavilion", new Vector3(position.x, 2.25, position.z), { width: 7.2, height: 4.5, depth: 6.2 }, brick, true);
+    body.isPickable = false;
+    for (const side of [-1, 1]) {
+      const tower = cylinder("central-pavilion-corner", new Vector3(position.x + side * 3.15, 2.35, position.z), { diameter: 1.45, height: 4.7 }, brick);
+      tower.checkCollisions = true;
+    }
+    const roof = box("central-pavilion-roof", new Vector3(position.x, 4.62, position.z), { width: 7.55, height: 0.28, depth: 6.55 }, brickDark);
+    roof.checkCollisions = true;
+    const dome = MeshBuilder.CreateSphere("central-pavilion-dome", { diameter: 4.7, segments: 24, slice: 0.5 }, scene);
+    dome.position = new Vector3(position.x, 5.15, position.z);
+    dome.scaling.y = 0.72;
+    dome.material = trim;
+    const minaret = cylinder("central-pavilion-minaret", new Vector3(position.x + 4.55, 4.2, position.z - 0.4), { diameter: 0.95, height: 8.4 }, brick);
+    minaret.checkCollisions = true;
+    const minaretCap = cylinder("central-pavilion-minaret-cap", new Vector3(position.x + 4.55, 8.55, position.z - 0.4), { diameter: 1.35, height: 0.35 }, trim);
+    minaretCap.checkCollisions = true;
+    const finial = cylinder("central-pavilion-finial", new Vector3(position.x + 4.55, 9.25, position.z - 0.4), { diameter: 0.18, height: 1.1 }, trim);
+    finial.isPickable = false;
+    for (const side of [-1, 1]) {
+      const facade = box("central-pavilion-facade", new Vector3(position.x + side * 2.25, 2.05, position.z - 3.14), { width: 1.25, height: 3.5, depth: 0.18 }, dark);
+      facade.isPickable = false;
+    }
   }
 
   function createBridge(x: number, z: number, width: number, depth: number) {
@@ -238,6 +272,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   createArchway("monumental-gateway", new Vector3(0, 0, -11), 1.15);
   createArchway("garden-gateway", new Vector3(0, 0, 20), 0.68);
+  createCentralPavilion(new Vector3(-4.2, 0, -3.8));
 
   // Academic blocks and a residence flank reproduce the supplied red-brick silhouette.
   createBuilding("north-academic", new Vector3(-24, 0, -16), 18, 13, 9, true);
@@ -266,12 +301,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   }
 
   const hemi = new HemisphericLight("warm-sky", new Vector3(0, 1, 0), scene);
-  hemi.intensity = 0.7;
-  hemi.diffuse = new Color3(1, 0.72, 0.5);
-  hemi.groundColor = new Color3(0.05, 0.09, 0.12);
+  hemi.intensity = 1.05;
+  hemi.diffuse = new Color3(1, 0.82, 0.66);
+  hemi.groundColor = new Color3(0.12, 0.16, 0.13);
   const sun = new DirectionalLight("sunset-sun", new Vector3(-0.4, -1, 0.3), scene);
   sun.position = new Vector3(25, 40, -30);
-  sun.intensity = 1.35;
+  sun.intensity = 1.8;
   sun.diffuse = new Color3(1, 0.62, 0.36);
 
   const gatewayLight = new PointLight("gateway-amber", new Vector3(0, 4.5, -9.2), scene);
@@ -283,6 +318,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   gatewayFill.diffuse = new Color3(0.95, 0.55, 0.3);
   gatewayFill.intensity = 8;
   gatewayFill.range = 13;
+  const courtFill = new PointLight("court-fill", new Vector3(0, 6.5, 7), scene);
+  courtFill.diffuse = new Color3(1, 0.62, 0.36);
+  courtFill.intensity = 10;
+  courtFill.range = 28;
   const waterLightPositions = [new Vector3(-14, 2.2, -5), new Vector3(14, 2.2, -5), new Vector3(-14, 2.2, 9), new Vector3(14, 2.2, 9)];
   waterLightPositions.forEach((position, index) => {
     const waterLight = new PointLight(`water-court-glow-${index}`, position, scene);
