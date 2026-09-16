@@ -282,6 +282,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     }
   }
 
+  function createTacticalCover(x: number, z: number, rotation = 0) {
+    const base = box("tactical-cover-base", new Vector3(x, 0.55, z), { width: 2.8, height: 1.1, depth: 0.9 }, brick, true);
+    base.rotation.y = rotation;
+    const cap = box("tactical-cover-cap", new Vector3(x, 1.18, z), { width: 3.05, height: 0.18, depth: 1.05 }, brickDark, true);
+    cap.rotation.y = rotation;
+  }
+
   function createPalm(x: number, z: number, size = 1) {
     cylinder("palm-white-base", new Vector3(x, 0.65 * size, z), { diameter: 0.72 * size, height: 1.3 * size }, white);
     cylinder("palm-trunk", new Vector3(x, 2.8 * size, z), { diameter: 0.43 * size, height: 4.5 * size }, trunk);
@@ -331,6 +338,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   createBridge(0, 1, 6.6, 40);
   createCourtParapet(0, 1, 40, -1);
   createCourtParapet(0, 1, 40, 1);
+  createTacticalCover(-8.5, 10, 0.12);
+  createTacticalCover(8.5, 6, -0.12);
+  createTacticalCover(-8.5, -10, -0.12);
+  createTacticalCover(8.5, -14, 0.12);
   createBridge(-14, 11, 10.5, 4.1);
   createBridge(14, -7, 10.5, 4.1);
   createBridge(0, -15, 18, 4.5);
