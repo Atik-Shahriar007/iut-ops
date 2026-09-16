@@ -6,7 +6,7 @@ A playable browser FPS prototype inspired by the supplied Islamic University of 
 
 Run the project with `pnpm install` followed by `pnpm dev`. Open the local Vite URL, click the canvas to deploy, then use `W A S D` to move, the mouse to look and fire, `Shift` to sprint, and `R` to reload. Clear each hostile wave to advance. If the operator is down, choose **Redeploy** to restart.
 
-The deterministic visual verification route is available at `/?demo`.
+The visual verification route is available at `/?demo`; it now starts stationary so the operator can test normal controls immediately.
 
 ## Build
 

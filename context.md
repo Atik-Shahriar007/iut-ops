@@ -36,7 +36,7 @@ The current prototype already contains:
 - Warm gateway lighting and cyan water-court accent lighting.
 - Health, ammo, score, wave, objective, and hostile-count HUD.
 - Restart/redeploy flow after game over.
-- Deterministic `?demo` camera route for visual verification.
+- `?demo` route for visual verification; it starts stationary and uses the same player controls as the live game.
 
 ## 3. How to run and verify
 
@@ -56,7 +56,7 @@ pnpm check
 pnpm build
 ```
 
-The deterministic visual route is:
+The visual verification route is:
 
 ```text
 /?demo

@@ -356,11 +356,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const reloadDuration = 1.35;
   let recoil = 0;
   let hudTimer = 0;
-  let demoAngle = 0;
   const enemies: Enemy[] = [];
   const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number }> = [];
   let audioContext: AudioContext | null = null;
-  const demo = new URLSearchParams(window.location.search).has("demo");
 
   function spawnEnemy(position: Vector3, seed: number) {
     const root = new TransformNode(`hostile-${seed}`, scene);
@@ -569,11 +567,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           wave += 1;
           startWave();
         }
-      }
-      if (demo && document.pointerLockElement !== canvas) {
-        demoAngle += delta * 0.16;
-        camera.position = new Vector3(Math.sin(demoAngle) * 27, 3.7, 7 + Math.cos(demoAngle) * 27);
-        camera.setTarget(new Vector3(0, 2.3, -10));
       }
     }
     for (let index = transientEffects.length - 1; index >= 0; index -= 1) {
