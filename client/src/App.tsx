@@ -11,6 +11,8 @@ const initialHud: HudState = {
   enemies: 6,
   objective: "CLEAR THE CENTRAL COURT",
   locked: false,
+  player: { x: 0, z: 34, angle: Math.PI },
+  radarEnemies: [],
 };
 
 export default function App() {
@@ -51,6 +53,21 @@ export default function App() {
         <div className="hud-divider" />
         <div className="hud-label">HOSTILES</div>
         <div className="hud-value accent">{String(hud.enemies).padStart(2, "0")}</div>
+      </section>
+
+      <section className="radar" aria-label="Campus radar">
+        <div className="radar-heading"><span>TACTICAL RADAR</span><b>LIVE</b></div>
+        <div className="radar-screen">
+          <div className="radar-grid radar-grid-a" /><div className="radar-grid radar-grid-b" />
+          <div className="radar-axis radar-axis-x" /><div className="radar-axis radar-axis-y" />
+          {hud.radarEnemies.map((enemy, index) => {
+            const left = Math.max(5, Math.min(95, ((enemy.x + 36) / 72) * 100));
+            const top = Math.max(5, Math.min(95, ((enemy.z + 36) / 72) * 100));
+            return <i key={`${index}-${enemy.x}-${enemy.z}`} className="radar-hostile" style={{ left: `${left}%`, top: `${top}%` }} />;
+          })}
+          <i className="radar-player" style={{ left: `${Math.max(5, Math.min(95, ((hud.player.x + 36) / 72) * 100))}%`, top: `${Math.max(5, Math.min(95, ((hud.player.z + 36) / 72) * 100))}%`, transform: `translate(-50%, -50%) rotate(${hud.player.angle}rad)` }} />
+        </div>
+        <div className="radar-legend"><span><i className="legend-player" /> OPERATOR</span><span><i className="legend-hostile" /> HOSTILE</span></div>
       </section>
 
       <div className="crosshair" aria-hidden="true"><span /><span /></div>

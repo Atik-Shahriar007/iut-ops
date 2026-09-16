@@ -6,6 +6,7 @@ import { Engine } from "@babylonjs/core/Engines/engine";
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
+import { PointLight } from "@babylonjs/core/Lights/pointLight";
 import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
@@ -25,6 +26,8 @@ export type HudState = {
   enemies: number;
   objective: string;
   locked: boolean;
+  player: { x: number; z: number; angle: number };
+  radarEnemies: Array<{ x: number; z: number }>;
 };
 
 type Callbacks = {
@@ -106,6 +109,14 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const enemyGlow = new StandardMaterial("hostile-glow", scene);
   enemyGlow.diffuseColor = new Color3(1, 0.42, 0.12);
   enemyGlow.emissiveColor = new Color3(0.75, 0.18, 0.02);
+
+  const muzzleMat = new StandardMaterial("muzzle-flash", scene);
+  muzzleMat.diffuseColor = new Color3(1, 0.62, 0.12);
+  muzzleMat.emissiveColor = new Color3(1, 0.28, 0.02);
+  muzzleMat.alpha = 0.92;
+  const sparkMat = new StandardMaterial("impact-spark", scene);
+  sparkMat.diffuseColor = new Color3(1, 0.32, 0.08);
+  sparkMat.emissiveColor = new Color3(1, 0.16, 0.01);
 
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
@@ -252,6 +263,24 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   sun.intensity = 1.35;
   sun.diffuse = new Color3(1, 0.62, 0.36);
 
+  const gatewayLight = new PointLight("gateway-amber", new Vector3(0, 4.5, -9.2), scene);
+  gatewayLight.diffuse = new Color3(1, 0.34, 0.12);
+  gatewayLight.specular = new Color3(1, 0.48, 0.2);
+  gatewayLight.intensity = 18;
+  gatewayLight.range = 18;
+  const gatewayFill = new PointLight("gateway-fill", new Vector3(0, 2.8, -13), scene);
+  gatewayFill.diffuse = new Color3(0.95, 0.55, 0.3);
+  gatewayFill.intensity = 8;
+  gatewayFill.range = 13;
+  const waterLightPositions = [new Vector3(-14, 2.2, -5), new Vector3(14, 2.2, -5), new Vector3(-14, 2.2, 9), new Vector3(14, 2.2, 9)];
+  waterLightPositions.forEach((position, index) => {
+    const waterLight = new PointLight(`water-court-glow-${index}`, position, scene);
+    waterLight.diffuse = new Color3(0.1, 0.65, 0.72);
+    waterLight.specular = new Color3(0.3, 0.8, 0.9);
+    waterLight.intensity = 5.5;
+    waterLight.range = 12;
+  });
+
   const camera = new FreeCamera("operator-camera", new Vector3(0, 2.1, 34), scene);
   camera.attachControl(canvas, true);
   camera.minZ = 0.15;
@@ -281,6 +310,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let hudTimer = 0;
   let demoAngle = 0;
   const enemies: Enemy[] = [];
+  const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number }> = [];
+  let audioContext: AudioContext | null = null;
   const demo = new URLSearchParams(window.location.search).has("demo");
 
   function spawnEnemy(position: Vector3, seed: number) {
@@ -351,9 +382,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     if (reloadTimer > 0 || now - lastShot < 130 || ammo <= 0) return;
     lastShot = now;
     ammo -= 1;
+    createMuzzleFlash();
+    playShotSound();
     const ray = new Ray(camera.position, camera.getForwardRay().direction, 80);
     const pick = scene.pickWithRay(ray, (mesh) => mesh.metadata?.enemy != null);
     if (pick?.hit && pick.pickedMesh?.metadata?.enemy) {
+      if (pick.pickedPoint) createHitEffect(pick.pickedPoint);
+      playHitSound();
       const root = pick.pickedMesh.metadata.enemy as TransformNode;
       const enemy = enemies.find((item) => item.root === root);
       if (enemy) {
@@ -368,6 +403,45 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       }
     }
   }
+
+  function createMuzzleFlash() {
+    const flash = MeshBuilder.CreateSphere("muzzle-flash", { diameter: 0.34, segments: 8 }, scene);
+    flash.parent = camera;
+    flash.position = new Vector3(0.34, -0.18, 1.15);
+    flash.scaling = new Vector3(1.8, 0.6, 0.6);
+    flash.material = muzzleMat;
+    transientEffects.push({ mesh: flash, life: 0.075, maxLife: 0.075 });
+  }
+
+  function createHitEffect(point: Vector3) {
+    const spark = MeshBuilder.CreateSphere("impact-spark", { diameter: 0.24, segments: 8 }, scene);
+    spark.position = point.clone();
+    spark.material = sparkMat;
+    transientEffects.push({ mesh: spark, life: 0.24, maxLife: 0.24 });
+  }
+
+  function getAudioContext() {
+    if (!audioContext) audioContext = new AudioContext();
+    if (audioContext.state === "suspended") void audioContext.resume();
+    return audioContext;
+  }
+
+  function playTone(startFrequency: number, endFrequency: number, duration: number, volume: number) {
+    const context = getAudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(startFrequency, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(endFrequency, context.currentTime + duration);
+    gain.gain.setValueAtTime(volume, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + duration);
+  }
+
+  function playShotSound() { playTone(150, 62, 0.11, 0.035); }
+  function playHitSound() { playTone(720, 240, 0.08, 0.025); }
 
   function updateEnemies(delta: number) {
     for (const enemy of enemies) {
@@ -392,6 +466,19 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       }
     }
   }
+
+  const hudSnapshot = (): HudState => ({
+    health,
+    ammo,
+    reserve,
+    score,
+    wave,
+    enemies: enemies.length,
+    objective: enemies.length ? "CLEAR THE CENTRAL COURT" : "REINFORCEMENTS INBOUND",
+    locked: document.pointerLockElement === canvas,
+    player: { x: camera.position.x, z: camera.position.z, angle: camera.rotation.y },
+    radarEnemies: enemies.map((enemy) => ({ x: enemy.root.position.x, z: enemy.root.position.z })),
+  });
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
@@ -419,14 +506,25 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
         camera.setTarget(new Vector3(0, 2.3, -10));
       }
     }
+    for (let index = transientEffects.length - 1; index >= 0; index -= 1) {
+      const effect = transientEffects[index];
+      effect.life -= delta;
+      const progress = Math.max(0, effect.life / effect.maxLife);
+      effect.mesh.scaling.scaleInPlace(0.94);
+      effect.mesh.visibility = progress;
+      if (effect.life <= 0) {
+        effect.mesh.dispose();
+        transientEffects.splice(index, 1);
+      }
+    }
     hudTimer += delta;
     if (hudTimer > 0.1) {
       hudTimer = 0;
-      callbacks.onHud({ health, ammo, reserve, score, wave, enemies: enemies.length, objective: enemies.length ? "CLEAR THE CENTRAL COURT" : "REINFORCEMENTS INBOUND", locked: document.pointerLockElement === canvas });
+      callbacks.onHud(hudSnapshot());
     }
   });
 
-  callbacks.onHud({ health, ammo, reserve, score, wave, enemies: enemies.length, objective: "CLEAR THE CENTRAL COURT", locked: false });
+  callbacks.onHud(hudSnapshot());
 
   return {
     scene,
@@ -434,6 +532,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       if (onBeforeRender) scene.onBeforeRenderObservable.remove(onBeforeRender);
       cleanup.forEach((remove) => remove());
       clearEnemies();
+      transientEffects.forEach((effect) => effect.mesh.dispose());
+      audioContext?.close();
       scene.dispose();
     },
   };
