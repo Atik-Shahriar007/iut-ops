@@ -477,6 +477,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   weaponBarrel.rotation.x = Math.PI / 2;
   weaponBarrel.position = new Vector3(0, 0.22, -1.34);
   weaponBarrel.material = weaponMetal;
+  const muzzleBrake = MeshBuilder.CreateCylinder("rifle-muzzle-brake", { diameter: 0.15, height: 0.2, tessellation: 12 }, scene);
+  muzzleBrake.parent = weaponRoot;
+  muzzleBrake.rotation.x = Math.PI / 2;
+  muzzleBrake.position = new Vector3(0, 0.22, -1.9);
+  muzzleBrake.material = weaponMetal;
+  const frontSightPost = MeshBuilder.CreateBox("rifle-front-sight", { width: 0.045, height: 0.16, depth: 0.08 }, scene);
+  frontSightPost.parent = weaponRoot;
+  frontSightPost.position = new Vector3(0, 0.39, -1.24);
+  frontSightPost.material = weaponMetal;
   const weaponStock = MeshBuilder.CreateBox("rifle-stock", { width: 0.34, height: 0.26, depth: 0.52 }, scene);
   weaponStock.parent = weaponRoot;
   weaponStock.position = new Vector3(0, 0.08, 0.86);
@@ -490,6 +499,11 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   weaponSight.parent = weaponRoot;
   weaponSight.position = new Vector3(0, 0.43, -0.08);
   weaponSight.material = weaponMetal;
+  const opticGlass = MeshBuilder.CreateCylinder("rifle-optic-glass", { diameter: 0.075, height: 0.012, tessellation: 16 }, scene);
+  opticGlass.parent = weaponRoot;
+  opticGlass.rotation.x = Math.PI / 2;
+  opticGlass.position = new Vector3(0, 0.43, -0.205);
+  opticGlass.material = weaponAccent;
   const weaponMagazine = MeshBuilder.CreateBox("rifle-magazine", { width: 0.24, height: 0.58, depth: 0.22 }, scene);
   weaponMagazine.parent = weaponRoot;
   weaponMagazine.position = new Vector3(0, -0.48, 0.28);
@@ -515,7 +529,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   firingHand.position = new Vector3(0.18, -0.18, 0.42);
   firingHand.scaling = new Vector3(0.85, 0.7, 1.15);
   firingHand.material = glove;
-  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
+  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, muzzleBrake, frontSightPost, weaponStock, weaponGrip, weaponSight, opticGlass, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
   let health = 1000;
@@ -854,7 +868,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const bob = Math.abs(Math.cos(performance.now() * (sprinting ? 0.014 : 0.006))) * (sprinting ? 0.018 : 0.004);
     weaponRoot.position.x = 0.42 + sway;
     weaponRoot.position.y = (sprinting ? -0.72 : -0.54) - recoil + bob;
-    weaponRoot.rotation.z = sprinting ? -0.08 : 0;
+    weaponRoot.rotation.x = -0.08 - recoil * 0.28;
+    weaponRoot.rotation.y = 0.02 + recoil * 0.08;
+    weaponRoot.rotation.z = (sprinting ? -0.08 : 0) - recoil * 0.12;
     if (!gameOver) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
