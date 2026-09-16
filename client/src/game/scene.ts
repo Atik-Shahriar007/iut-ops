@@ -239,7 +239,17 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const pillarWidth = 2.35 * scale;
     box(`${name}-left`, new Vector3(position.x - 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
     box(`${name}-right`, new Vector3(position.x + 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
-    box(`${name}-lintel`, new Vector3(position.x, 7.55 * scale, position.z), { width: 12.5 * scale, height: 1.9 * scale, depth: 2.1 * scale }, brick, true);
+    const outerArchHeight = 4.3 * scale;
+    const outerAngle = 0.72;
+    const outerLeft = box(`${name}-outer-arch-left`, new Vector3(position.x - 2.55 * scale, 6.55 * scale, position.z), { width: 0.9 * scale, height: outerArchHeight, depth: 2.1 * scale }, brick, true);
+    const outerRight = box(`${name}-outer-arch-right`, new Vector3(position.x + 2.55 * scale, 6.55 * scale, position.z), { width: 0.9 * scale, height: outerArchHeight, depth: 2.1 * scale }, brick, true);
+    outerLeft.rotation.z = -outerAngle;
+    outerRight.rotation.z = outerAngle;
+    const innerLeft = box(`${name}-inner-arch-left`, new Vector3(position.x - 2.1 * scale, 6.45 * scale, position.z - 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
+    const innerRight = box(`${name}-inner-arch-right`, new Vector3(position.x + 2.1 * scale, 6.45 * scale, position.z - 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
+    innerLeft.rotation.z = -outerAngle;
+    innerRight.rotation.z = outerAngle;
+    box(`${name}-arch-crown`, new Vector3(position.x, 8.12 * scale, position.z), { width: 2.1 * scale, height: 0.55 * scale, depth: 2.1 * scale }, brickDark, true);
   }
 
   function createCentralPavilion(position: Vector3) {
