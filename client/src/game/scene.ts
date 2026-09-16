@@ -235,6 +235,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     for (const end of [-1, 1]) box("bridge-end", new Vector3(x, 0.9, z + end * (depth / 2 - 0.18)), { width, height: 0.85, depth: 0.28 }, brickDark);
   }
 
+  function createCourtParapet(x: number, z: number, length: number, side: number) {
+    const railX = x + side * 3.35;
+    box("court-parapet-base", new Vector3(railX, 0.7, z), { width: 0.55, height: 0.62, depth: length }, brick, true);
+    for (let offset = -length / 2 + 1.2; offset < length / 2; offset += 3.6) {
+      box("court-parapet-pier", new Vector3(railX, 1.15, z + offset), { width: 0.72, height: 1.18, depth: 0.46 }, brick, true);
+      box("court-parapet-cap", new Vector3(railX, 1.72, z + offset + 1.55), { width: 0.62, height: 0.18, depth: 3.1 }, brickDark);
+    }
+  }
+
   function createPalm(x: number, z: number, size = 1) {
     cylinder("palm-white-base", new Vector3(x, 0.65 * size, z), { diameter: 0.72 * size, height: 1.3 * size }, white);
     cylinder("palm-trunk", new Vector3(x, 2.8 * size, z), { diameter: 0.43 * size, height: 4.5 * size }, trunk);
@@ -251,10 +260,16 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     box("lamp-head", new Vector3(x + 0.48, 4.88, z), { width: 0.92, height: 0.1, depth: 0.18 }, lamp);
   }
 
-  // Water courts and planting beds frame the central ceremonial route.
-  box("water-court-left", new Vector3(-14, 0.18, 1), { width: 10.5, height: 0.18, depth: 30 }, water);
-  box("water-court-right", new Vector3(14, 0.18, 1), { width: 10.5, height: 0.18, depth: 30 }, water);
-  box("water-court-back", new Vector3(0, 0.18, -15), { width: 18, height: 0.18, depth: 4.5 }, water);
+  // A connected rectangular water court frames the ceremonial bridge.
+  box("water-court-left", new Vector3(-14, 0.18, 1), { width: 10.5, height: 0.18, depth: 32 }, water);
+  box("water-court-right", new Vector3(14, 0.18, 1), { width: 10.5, height: 0.18, depth: 32 }, water);
+  box("water-court-back", new Vector3(0, 0.18, -15), { width: 38.5, height: 0.18, depth: 5 }, water);
+  box("water-court-front", new Vector3(0, 0.18, 17), { width: 38.5, height: 0.18, depth: 4.5 }, water);
+  box("water-court-left-border", new Vector3(-19.6, 0.28, 1), { width: 0.6, height: 0.4, depth: 38 }, brick, true);
+  box("water-court-right-border", new Vector3(19.6, 0.28, 1), { width: 0.6, height: 0.4, depth: 38 }, brick, true);
+  createBridge(0, 1, 6.6, 40);
+  createCourtParapet(0, 1, 40, -1);
+  createCourtParapet(0, 1, 40, 1);
   createBridge(-14, 11, 10.5, 4.1);
   createBridge(14, -7, 10.5, 4.1);
   createBridge(0, -15, 18, 4.5);
@@ -286,6 +301,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   for (let z = -25; z <= 25; z += 8) {
     createPalm(-34, z, 1.05);
     createPalm(34, z, 1.05);
+  }
+  for (let z = -14; z <= 16; z += 5) {
+    createPalm(-20.8, z, 0.92);
+    createPalm(20.8, z, 0.92);
   }
 
   const hemi = new HemisphericLight("warm-sky", new Vector3(0, 1, 0), scene);
