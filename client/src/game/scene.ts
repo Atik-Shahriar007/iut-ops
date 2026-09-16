@@ -277,6 +277,17 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     box("lamp-head", new Vector3(x + 0.48, 4.88, z), { width: 0.92, height: 0.1, depth: 0.18 }, lamp);
   }
 
+  function createPlanter(x: number, z: number, scale = 1) {
+    box("landscape-planter", new Vector3(x, 0.45 * scale, z), { width: 1.7 * scale, height: 0.7 * scale, depth: 1.7 * scale }, brickDark);
+    for (const offset of [-0.45, 0, 0.45]) {
+      const shrub = MeshBuilder.CreateSphere("campus-shrub", { diameter: 0.9 * scale, segments: 10 }, scene);
+      shrub.position = new Vector3(x + offset * scale, 1.05 * scale, z + (offset % 0.3) * scale);
+      shrub.scaling = new Vector3(1.1, 0.7, 0.9);
+      shrub.material = leaf;
+      shrub.isPickable = false;
+    }
+  }
+
   // A connected rectangular water court frames the ceremonial bridge.
   box("water-court-left", new Vector3(-14, 0.18, 1), { width: 10.5, height: 0.18, depth: 32 }, water);
   box("water-court-right", new Vector3(14, 0.18, 1), { width: 10.5, height: 0.18, depth: 32 }, water);
@@ -330,6 +341,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   for (let z = -25; z <= 25; z += 8) {
     createPalm(-34, z, 1.05);
     createPalm(34, z, 1.05);
+  }
+  for (let z = -12; z <= 12; z += 8) {
+    createPlanter(-18.8, z, 0.9);
+    createPlanter(18.8, z, 0.9);
   }
   for (let z = -14; z <= 16; z += 5) {
     createPalm(-20.8, z, 0.92);
