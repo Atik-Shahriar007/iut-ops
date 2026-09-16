@@ -8,6 +8,7 @@ const initialHud: HudState = {
   reserve: Number.POSITIVE_INFINITY,
   reloading: false,
   score: 0,
+  kills: 0,
   wave: 1,
   enemies: 6,
   objective: "CLEAR THE CENTRAL COURT",
@@ -115,6 +116,7 @@ export default function App() {
             <div className="eyebrow">SIGNAL LOST</div>
             <h1>OPERATOR DOWN</h1>
             <p>The central court is still contested. Re-enter the sector and push the next wave back.</p>
+            <div className="mission-stat"><span>TOTAL KILLS</span><strong>{String(hud.kills).padStart(2, "0")}</strong></div>
             <button onClick={restart}>REDEPLOY <span>↗</span></button>
           </div>
         </div>

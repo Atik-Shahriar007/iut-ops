@@ -13,6 +13,7 @@ import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import { Scene } from "@babylonjs/core/scene";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
+import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
 import "@babylonjs/core/Shaders/default.vertex";
 import "@babylonjs/core/Shaders/default.fragment";
 import type { Nullable } from "@babylonjs/core/types";
@@ -23,6 +24,7 @@ export type HudState = {
   reserve: number;
   reloading: boolean;
   score: number;
+  kills: number;
   wave: number;
   enemies: number;
   objective: string;
@@ -171,6 +173,24 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const glove = new StandardMaterial("tactical-gloves", scene);
   glove.diffuseColor = new Color3(0.035, 0.045, 0.05);
   glove.specularColor = new Color3(0.14, 0.16, 0.18);
+  const carPaint = new StandardMaterial("supercar-paint", scene);
+  carPaint.diffuseColor = new Color3(0.62, 0.025, 0.018);
+  carPaint.specularColor = new Color3(0.9, 0.38, 0.25);
+  const carGlass = new StandardMaterial("supercar-glass", scene);
+  carGlass.diffuseColor = new Color3(0.025, 0.07, 0.09);
+  carGlass.specularColor = new Color3(0.8, 0.9, 0.95);
+  carGlass.alpha = 0.82;
+  const carRubber = new StandardMaterial("supercar-rubber", scene);
+  carRubber.diffuseColor = new Color3(0.012, 0.014, 0.016);
+  const carMetal = new StandardMaterial("supercar-metal", scene);
+  carMetal.diffuseColor = new Color3(0.42, 0.45, 0.48);
+  carMetal.specularColor = new Color3(0.8, 0.84, 0.88);
+  const carLight = new StandardMaterial("supercar-lights", scene);
+  carLight.diffuseColor = new Color3(1, 0.8, 0.42);
+  carLight.emissiveColor = new Color3(1, 0.38, 0.08);
+  const enemyWeaponMat = new StandardMaterial("enemy-weapon", scene);
+  enemyWeaponMat.diffuseColor = new Color3(0.025, 0.03, 0.035);
+  enemyWeaponMat.specularColor = new Color3(0.32, 0.36, 0.4);
 
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
@@ -406,6 +426,70 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     createPalm(-20.8, z, 0.92);
     createPalm(20.8, z, 0.92);
   }
+  const carRoot = new TransformNode("parked-supercar", scene);
+  carRoot.position = new Vector3(5.4, 0, 28.5);
+  carRoot.rotation.y = Math.PI;
+  const carBody = box("supercar-body", new Vector3(0, 0.62, 0), { width: 2.15, height: 0.48, depth: 4.2 }, carPaint);
+  carBody.parent = carRoot;
+  const carHood = box("supercar-hood", new Vector3(0, 0.86, -1.28), { width: 1.92, height: 0.16, depth: 1.18 }, carPaint);
+  carHood.parent = carRoot;
+  const carCabin = box("supercar-cabin", new Vector3(0, 1.14, 0.35), { width: 1.64, height: 0.72, depth: 1.72 }, carGlass);
+  carCabin.parent = carRoot;
+  carCabin.rotation.x = -0.06;
+  const carRoof = box("supercar-roof", new Vector3(0, 1.52, 0.28), { width: 1.72, height: 0.12, depth: 1.42 }, carPaint);
+  carRoof.parent = carRoot;
+  const roofDecalTexture = new DynamicTexture("atik-roof-decal", { width: 512, height: 180 }, scene, true);
+  roofDecalTexture.drawText("ATIK", null, 126, "italic 900 112px Arial", "#f6c453", "transparent", true, true);
+  const roofDecalMat = new StandardMaterial("atik-roof-decal-material", scene);
+  roofDecalMat.diffuseTexture = roofDecalTexture;
+  roofDecalMat.emissiveColor = new Color3(0.22, 0.12, 0.025);
+  const roofDecal = MeshBuilder.CreatePlane("atik-roof-decal", { width: 1.18, height: 0.42 }, scene);
+  roofDecal.parent = carRoot;
+  roofDecal.position = new Vector3(0, 1.595, 0.28);
+  roofDecal.rotation.x = Math.PI / 2;
+  roofDecal.material = roofDecalMat;
+  const frontSplitter = box("supercar-front-splitter", new Vector3(0, 0.36, -2.12), { width: 2.28, height: 0.1, depth: 0.26 }, carPaint);
+  frontSplitter.parent = carRoot;
+  const leftSkirt = box("supercar-left-skirt", new Vector3(-1.08, 0.38, 0), { width: 0.12, height: 0.18, depth: 2.8 }, carPaint);
+  leftSkirt.parent = carRoot;
+  const rightSkirt = box("supercar-right-skirt", new Vector3(1.08, 0.38, 0), { width: 0.12, height: 0.18, depth: 2.8 }, carPaint);
+  rightSkirt.parent = carRoot;
+  const windshield = box("supercar-windshield", new Vector3(0, 1.27, -0.48), { width: 1.5, height: 0.48, depth: 0.08 }, carGlass);
+  windshield.parent = carRoot;
+  windshield.rotation.x = -0.48;
+  const rearGlass = box("supercar-rear-glass", new Vector3(0, 1.27, 1.08), { width: 1.48, height: 0.42, depth: 0.08 }, carGlass);
+  rearGlass.parent = carRoot;
+  rearGlass.rotation.x = 0.5;
+  const spoiler = box("supercar-rear-spoiler", new Vector3(0, 1.16, 1.94), { width: 1.72, height: 0.1, depth: 0.22 }, carPaint);
+  spoiler.parent = carRoot;
+  for (const side of [-1, 1]) {
+    const spoilerPost = box(`supercar-spoiler-post-${side}`, new Vector3(side * 0.62, 0.98, 1.94), { width: 0.08, height: 0.35, depth: 0.08 }, carMetal);
+    spoilerPost.parent = carRoot;
+    const mirror = MeshBuilder.CreateSphere(`supercar-mirror-${side}`, { diameter: 0.2, segments: 8 }, scene);
+    mirror.parent = carRoot;
+    mirror.position = new Vector3(side * 0.98, 1.16, -0.42);
+    mirror.scaling = new Vector3(1, 0.65, 1.35);
+    mirror.material = carPaint;
+  }
+  for (const side of [-1, 1]) {
+    for (const z of [-1.38, 1.38]) {
+      const wheel = MeshBuilder.CreateCylinder(`supercar-wheel-${side}-${z}`, { diameter: 0.7, height: 0.24, tessellation: 16 }, scene);
+      wheel.parent = carRoot;
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position = new Vector3(side * 1.04, 0.42, z);
+      wheel.material = carRubber;
+      const rim = MeshBuilder.CreateCylinder(`supercar-rim-${side}-${z}`, { diameter: 0.34, height: 0.25, tessellation: 12 }, scene);
+      rim.parent = carRoot;
+      rim.rotation.z = Math.PI / 2;
+      rim.position = new Vector3(side * 1.17, 0.42, z);
+      rim.material = carMetal;
+    }
+  }
+  for (const side of [-1, 1]) {
+    const headlight = box(`supercar-headlight-${side}`, new Vector3(side * 0.62, 0.73, -2.11), { width: 0.48, height: 0.12, depth: 0.08 }, carLight);
+    headlight.parent = carRoot;
+  }
+  [carBody, carHood, carCabin, carRoof].forEach((part) => { part.isPickable = false; });
 
   const hemi = new HemisphericLight("warm-sky", new Vector3(0, 1, 0), scene);
   hemi.intensity = 0.85;
@@ -536,6 +620,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let ammo = 30;
   const reserve = Number.POSITIVE_INFINITY;
   let score = 0;
+  let kills = 0;
   let wave = 1;
   let waveClearTimer = 0;
   let gameOver = false;
@@ -551,6 +636,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let hitMarker = 0;
   let killConfirm = 0;
   let damagePulse = 0;
+  let driving = false;
+  let carVelocity = 0;
+  const pressedKeys = new Set<string>();
   const enemies: Enemy[] = [];
   const coverPoints = [
     new Vector3(-8.5, 0, 10), new Vector3(8.5, 0, 6),
@@ -577,6 +665,25 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const shoulder = box(`hostile-shoulder-${seed}`, new Vector3(0, 1.4, 0), { width: 1.25, height: 0.18, depth: 0.76 }, enemyMat);
     shoulder.parent = root;
     shoulder.metadata = { enemy: root };
+    const rifle = box(`hostile-rifle-${seed}`, new Vector3(0.48, 1.15, 0.34), { width: 0.13, height: 0.14, depth: 0.7 }, enemyWeaponMat);
+    rifle.parent = root;
+    rifle.isPickable = false;
+    const rifleBarrel = MeshBuilder.CreateCylinder(`hostile-rifle-barrel-${seed}`, { diameter: 0.055, height: 0.45, tessellation: 8 }, scene);
+    rifleBarrel.parent = root;
+    rifleBarrel.rotation.x = Math.PI / 2;
+    rifleBarrel.position = new Vector3(0.48, 1.16, 0.86);
+    rifleBarrel.material = enemyWeaponMat;
+    rifleBarrel.isPickable = false;
+    const frontHand = MeshBuilder.CreateSphere(`hostile-front-hand-${seed}`, { diameter: 0.2, segments: 8 }, scene);
+    frontHand.parent = root;
+    frontHand.position = new Vector3(0.48, 1.18, 0.5);
+    frontHand.material = enemyMat;
+    frontHand.isPickable = false;
+    const rearHand = MeshBuilder.CreateSphere(`hostile-rear-hand-${seed}`, { diameter: 0.2, segments: 8 }, scene);
+    rearHand.parent = root;
+    rearHand.position = new Vector3(0.48, 1.08, 0.16);
+    rearHand.material = enemyMat;
+    rearHand.isPickable = false;
     const baseScale = kind === "heavy" ? new Vector3(1.35, 1.2, 1.35) : kind === "scout" ? new Vector3(0.8, 0.9, 0.8) : Vector3.One();
     root.scaling = baseScale.clone();
     enemies.push({ root, body, head, health: kind === "heavy" ? 180 : kind === "scout" ? 55 : 100, kind, speed, baseScale, attackTimer: 0, seed });
@@ -613,6 +720,25 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     if (event.button === 0) shoot();
   };
   const onKeyDown = (event: KeyboardEvent) => {
+    pressedKeys.add(event.code);
+    if (event.code === "KeyF") {
+      const carDistance = Vector3.Distance(camera.position, carRoot.position);
+      if (driving) {
+        driving = false;
+        carVelocity = 0;
+        weaponRoot.setEnabled(true);
+        camera.speed = sprinting ? 0.38 : 0.22;
+        camera.position = carRoot.position.add(new Vector3(2.4, 1.15, 0));
+      } else if (carDistance < 5.2) {
+        driving = true;
+        carVelocity = 0;
+        weaponRoot.setEnabled(false);
+        camera.speed = 0;
+        const carForward = new Vector3(Math.sin(carRoot.rotation.y), 0, Math.cos(carRoot.rotation.y));
+        camera.position.copyFrom(carRoot.position.subtract(carForward.scale(7)).add(new Vector3(0, 4.1, 0)));
+        camera.setTarget(carRoot.position.add(carForward.scale(8)).add(new Vector3(0, 1.0, 0)));
+      }
+    }
     if (event.code === "KeyR" && reloadTimer <= 0 && ammo < 30) startReload();
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
       sprinting = true;
@@ -620,6 +746,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     }
   };
   const onKeyUp = (event: KeyboardEvent) => {
+    pressedKeys.delete(event.code);
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
       sprinting = false;
       camera.speed = 0.22;
@@ -631,6 +758,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   cleanup.push(() => canvas.removeEventListener("pointerdown", onPointerDown));
   cleanup.push(() => window.removeEventListener("keydown", onKeyDown));
   cleanup.push(() => window.removeEventListener("keyup", onKeyUp));
+  cleanup.push(() => pressedKeys.clear());
 
   function shoot() {
     const now = performance.now();
@@ -654,6 +782,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
         enemy.root.scaling = new Vector3(1.14, 1.14, 1.14);
         if (enemy.health <= 0) {
           score += 100;
+          kills += 1;
           killConfirm = 1;
           enemy.root.dispose(false, true);
           const index = enemies.indexOf(enemy);
@@ -813,6 +942,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   const hudSnapshot = (): HudState => {
     const zone = getCurrentZone();
+    const carDistance = Vector3.Distance(camera.position, carRoot.position);
     const zoneObjective = zone === "MAIN GATEWAY"
       ? "REACH THE MAIN GATEWAY"
       : zone === "CENTRAL BRIDGE"
@@ -822,15 +952,21 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           : zone === "PALM AVENUE"
             ? "PATROL PALM AVENUE"
             : "HOLD THE ACADEMIC QUADRANT";
+    const objective = driving
+      ? "DRIVE THE SUPERCAR • W A S D • F EXIT"
+      : carDistance < 5.2
+        ? "PRESS F TO ENTER SUPERCAR"
+        : enemies.length ? zoneObjective : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND";
     return {
     health,
     ammo,
     reserve,
     score,
+    kills,
     wave,
     enemies: enemies.length,
     reloading: reloadTimer > 0,
-    objective: enemies.length ? zoneObjective : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND",
+    objective,
     zone,
     locked: document.pointerLockElement === canvas,
     hitMarker,
@@ -871,6 +1007,20 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     weaponRoot.rotation.x = -0.08 - recoil * 0.28;
     weaponRoot.rotation.y = 0.02 + recoil * 0.08;
     weaponRoot.rotation.z = (sprinting ? -0.08 : 0) - recoil * 0.12;
+    if (driving && !gameOver) {
+      const throttle = pressedKeys.has("KeyW") ? 1 : pressedKeys.has("KeyS") ? -1 : 0;
+      carVelocity += throttle * delta * 10;
+      carVelocity *= throttle === 0 ? Math.max(0, 1 - delta * 2.8) : 1;
+      carVelocity = Math.max(-4, Math.min(11, carVelocity));
+      const steering = (pressedKeys.has("KeyA") ? -1 : 0) + (pressedKeys.has("KeyD") ? 1 : 0);
+      carRoot.rotation.y += steering * delta * (0.55 + Math.abs(carVelocity) * 0.035) * (carVelocity >= 0 ? 1 : -1);
+      const forward = new Vector3(Math.sin(carRoot.rotation.y), 0, Math.cos(carRoot.rotation.y));
+      carRoot.position.addInPlace(forward.scale(carVelocity * delta));
+      carRoot.position.x = Math.max(-37, Math.min(37, carRoot.position.x));
+      carRoot.position.z = Math.max(-37, Math.min(37, carRoot.position.z));
+      camera.position.copyFrom(carRoot.position.subtract(forward.scale(7)).add(new Vector3(0, 4.1, 0)));
+      camera.setTarget(carRoot.position.add(forward.scale(8)).add(new Vector3(0, 1.0, 0)));
+    }
     if (!gameOver) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
