@@ -27,6 +27,9 @@ export type HudState = {
   enemies: number;
   objective: string;
   locked: boolean;
+  hitMarker: number;
+  killConfirm: number;
+  damagePulse: number;
   player: { x: number; z: number; angle: number };
   radarEnemies: Array<{ x: number; z: number }>;
 };
@@ -489,6 +492,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const reloadDuration = 1.35;
   let recoil = 0;
   let hudTimer = 0;
+  let hitMarker = 0;
+  let killConfirm = 0;
+  let damagePulse = 0;
   const enemies: Enemy[] = [];
   const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number }> = [];
   let audioContext: AudioContext | null = null;
@@ -577,10 +583,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       const root = pick.pickedMesh.metadata.enemy as TransformNode;
       const enemy = enemies.find((item) => item.root === root);
       if (enemy) {
+        hitMarker = 1;
         enemy.health -= 55;
         enemy.root.scaling = new Vector3(1.14, 1.14, 1.14);
         if (enemy.health <= 0) {
           score += 100;
+          killConfirm = 1;
           enemy.root.dispose(false, true);
           const index = enemies.indexOf(enemy);
           if (index >= 0) enemies.splice(index, 1);
@@ -654,6 +662,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
         enemy.attackTimer -= delta;
         if (enemy.attackTimer <= 0) {
           health = Math.max(0, health - 8);
+          damagePulse = 1;
           enemy.attackTimer = 1.0;
           if (health === 0 && !gameOver) {
             gameOver = true;
@@ -675,12 +684,18 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     reloading: reloadTimer > 0,
     objective: enemies.length ? "CLEAR THE CENTRAL COURT" : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND",
     locked: document.pointerLockElement === canvas,
+    hitMarker,
+    killConfirm,
+    damagePulse,
     player: { x: camera.position.x, z: camera.position.z, angle: camera.rotation.y },
     radarEnemies: enemies.map((enemy) => ({ x: enemy.root.position.x, z: enemy.root.position.z })),
   });
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
+    hitMarker = Math.max(0, hitMarker - delta * 5);
+    killConfirm = Math.max(0, killConfirm - delta * 1.8);
+    damagePulse = Math.max(0, damagePulse - delta * 2.5);
     recoil = Math.max(0, recoil - delta * 1.8);
     const sway = Math.sin(performance.now() * 0.004) * 0.006;
     weaponRoot.position.x = 0.42 + sway;

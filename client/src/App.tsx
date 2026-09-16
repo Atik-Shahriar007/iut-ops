@@ -12,6 +12,9 @@ const initialHud: HudState = {
   enemies: 6,
   objective: "CLEAR THE CENTRAL COURT",
   locked: false,
+  hitMarker: 0,
+  killConfirm: 0,
+  damagePulse: 0,
   player: { x: 0, z: 34, angle: Math.PI },
   radarEnemies: [],
 };
@@ -72,6 +75,9 @@ export default function App() {
       </section>
 
       <div className="crosshair" aria-hidden="true"><span /><span /></div>
+      <div className={`hit-marker ${hud.hitMarker > 0 ? "is-visible" : ""}`} aria-hidden="true">×</div>
+      <div className={`damage-pulse ${hud.damagePulse > 0 ? "is-visible" : ""}`} aria-hidden="true" />
+      <div className={`kill-confirm ${hud.killConfirm > 0 ? "is-visible" : ""}`} aria-live="polite">TARGET DOWN</div>
 
       <section className="objective-card" aria-live="polite">
         <div className="eyebrow">CURRENT DIRECTIVE</div>
