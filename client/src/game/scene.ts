@@ -150,6 +150,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
   ground.checkCollisions = true;
+  const horizonMaterial = new StandardMaterial("distant-horizon", scene);
+  horizonMaterial.diffuseColor = new Color3(0.28, 0.46, 0.34);
+  horizonMaterial.emissiveColor = new Color3(0.08, 0.14, 0.09);
+  horizonMaterial.disableLighting = true;
+  const horizon = box("distant-campus-horizon", new Vector3(0, 2.2, -58), { width: 120, height: 4.4, depth: 0.5 }, horizonMaterial);
+  horizon.isPickable = false;
 
   const plaza = MeshBuilder.CreateBox("central-plaza", { width: 22, height: 0.18, depth: 58 }, scene);
   plaza.position = new Vector3(0, 0.08, 3);
