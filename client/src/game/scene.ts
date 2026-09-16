@@ -518,7 +518,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
-  let health = 100;
+  let health = 300;
   let ammo = 30;
   const reserve = Number.POSITIVE_INFINITY;
   let score = 0;
@@ -756,9 +756,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           createEnemyTracer(muzzle, target);
           playEnemyShotSound(enemy.kind);
           createHitEffect(target);
-          health = Math.max(0, health - (enemy.kind === "heavy" ? 10 : enemy.kind === "scout" ? 4 : 6));
+          // Give the player enough time to react between hits while keeping enemy roles distinct.
+          health = Math.max(0, health - (enemy.kind === "heavy" ? 6 : enemy.kind === "scout" ? 2 : 3));
           damagePulse = 1;
-          enemy.attackTimer = enemy.kind === "heavy" ? 1.7 : enemy.kind === "scout" ? 1.15 : 1.4;
+          enemy.attackTimer = enemy.kind === "heavy" ? 2.2 : enemy.kind === "scout" ? 1.5 : 1.8;
           if (health === 0 && !gameOver) {
             gameOver = true;
             document.exitPointerLock?.();
@@ -771,9 +772,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       } else {
         enemy.attackTimer -= delta;
         if (enemy.attackTimer <= 0) {
-          health = Math.max(0, health - 8);
+          health = Math.max(0, health - 5);
           damagePulse = 1;
-          enemy.attackTimer = 1.0;
+          enemy.attackTimer = 1.2;
           if (health === 0 && !gameOver) {
             gameOver = true;
             document.exitPointerLock?.();

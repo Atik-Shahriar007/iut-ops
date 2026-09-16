@@ -3,7 +3,7 @@ import GameCanvas from "@/components/GameCanvas";
 import type { HudState } from "@/game/scene";
 
 const initialHud: HudState = {
-  health: 100,
+  health: 300,
   ammo: 30,
   reserve: Number.POSITIVE_INFINITY,
   reloading: false,
@@ -93,8 +93,8 @@ export default function App() {
       <section className="bottom-hud" aria-label="Player status">
         <div className="health-block">
           <div className="eyebrow">VITALS</div>
-          <div className="health-row"><strong>{String(hud.health).padStart(3, "0")}</strong><span> / 100</span></div>
-          <div className="health-track"><i style={{ width: `${hud.health}%` }} /></div>
+          <div className="health-row"><strong>{String(hud.health).padStart(3, "0")}</strong><span> / 300</span></div>
+          <div className="health-track"><i style={{ width: `${Math.min(100, (hud.health / 300) * 100)}%` }} /></div>
         </div>
         <div className={`controls-hint ${hud.reloading ? "is-reloading" : ""}`}><b>W A S D</b> MOVE <b>SHIFT</b> SPRINT <b>R</b> RELOAD <b>LMB</b> FIRE</div>
         <div className="ammo-block">
