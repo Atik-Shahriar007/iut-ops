@@ -143,6 +143,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const weaponAccent = new StandardMaterial("sidearm-accent", scene);
   weaponAccent.diffuseColor = new Color3(0.28, 0.035, 0.018);
   weaponAccent.emissiveColor = new Color3(0.05, 0.004, 0.002);
+  const glove = new StandardMaterial("tactical-gloves", scene);
+  glove.diffuseColor = new Color3(0.035, 0.045, 0.05);
+  glove.specularColor = new Color3(0.14, 0.16, 0.18);
 
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
@@ -421,7 +424,27 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   weaponMagazine.position = new Vector3(0, -0.48, 0.28);
   weaponMagazine.rotation.x = -0.22;
   weaponMagazine.material = weaponMetal;
-  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine];
+  const supportForearm = MeshBuilder.CreateBox("support-forearm", { width: 0.22, height: 0.24, depth: 0.68 }, scene);
+  supportForearm.parent = weaponRoot;
+  supportForearm.position = new Vector3(-0.25, -0.12, -0.38);
+  supportForearm.rotation.y = -0.28;
+  supportForearm.material = glove;
+  const supportHand = MeshBuilder.CreateSphere("support-glove", { diameter: 0.42, segments: 12 }, scene);
+  supportHand.parent = weaponRoot;
+  supportHand.position = new Vector3(-0.2, -0.02, -0.62);
+  supportHand.scaling = new Vector3(0.82, 0.65, 1.25);
+  supportHand.material = glove;
+  const firingForearm = MeshBuilder.CreateBox("firing-forearm", { width: 0.24, height: 0.28, depth: 0.62 }, scene);
+  firingForearm.parent = weaponRoot;
+  firingForearm.position = new Vector3(0.27, -0.34, 0.7);
+  firingForearm.rotation.y = 0.18;
+  firingForearm.material = glove;
+  const firingHand = MeshBuilder.CreateSphere("firing-glove", { diameter: 0.4, segments: 12 }, scene);
+  firingHand.parent = weaponRoot;
+  firingHand.position = new Vector3(0.18, -0.18, 0.42);
+  firingHand.scaling = new Vector3(0.85, 0.7, 1.15);
+  firingHand.material = glove;
+  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
   let health = 100;
