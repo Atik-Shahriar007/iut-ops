@@ -38,6 +38,7 @@ export type HudState = {
 type Callbacks = {
   onHud: (hud: HudState) => void;
   onGameOver: () => void;
+  onMissionComplete: () => void;
 };
 
 type Enemy = {
@@ -524,6 +525,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let wave = 1;
   let waveClearTimer = 0;
   let gameOver = false;
+  let missionComplete = false;
   let lastShot = 0;
   let reloadTimer = 0;
   const reloadDuration = 1.35;
@@ -868,8 +870,14 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       if (enemies.length === 0) {
         waveClearTimer += delta;
         if (waveClearTimer > 2.2) {
-          wave += 1;
-          startWave();
+          if (wave >= 5 && !missionComplete) {
+            missionComplete = true;
+            document.exitPointerLock?.();
+            callbacks.onMissionComplete();
+          } else if (!missionComplete) {
+            wave += 1;
+            startWave();
+          }
         }
       }
     }

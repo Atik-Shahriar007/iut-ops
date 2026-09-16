@@ -24,9 +24,11 @@ export default function App() {
   const [run, setRun] = useState(0);
   const [hud, setHud] = useState(initialHud);
   const [gameOver, setGameOver] = useState(false);
+  const [missionComplete, setMissionComplete] = useState(false);
 
   const restart = () => {
     setGameOver(false);
+    setMissionComplete(false);
     setHud(initialHud);
     setRun((value) => value + 1);
   };
@@ -37,6 +39,7 @@ export default function App() {
         restartKey={run}
         onHud={setHud}
         onGameOver={() => setGameOver(true)}
+        onMissionComplete={() => setMissionComplete(true)}
       />
 
       <div className="scanlines" aria-hidden="true" />
@@ -112,6 +115,16 @@ export default function App() {
             <div className="eyebrow">SIGNAL LOST</div>
             <h1>OPERATOR DOWN</h1>
             <p>The central court is still contested. Re-enter the sector and push the next wave back.</p>
+            <button onClick={restart}>REDEPLOY <span>↗</span></button>
+          </div>
+        </div>
+      )}
+      {missionComplete && (
+        <div className="game-over-backdrop mission-complete-backdrop">
+          <div className="game-over-card mission-complete-card">
+            <div className="eyebrow">MISSION ACCOMPLISHED</div>
+            <h1>CENTRAL COURT SECURED</h1>
+            <p>All five hostile waves are clear. IUT campus response operations are complete.</p>
             <button onClick={restart}>REDEPLOY <span>↗</span></button>
           </div>
         </div>
