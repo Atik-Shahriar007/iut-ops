@@ -21,6 +21,7 @@ export type HudState = {
   health: number;
   ammo: number;
   reserve: number;
+  reloading: boolean;
   score: number;
   wave: number;
   enemies: number;
@@ -117,6 +118,16 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const sparkMat = new StandardMaterial("impact-spark", scene);
   sparkMat.diffuseColor = new Color3(1, 0.32, 0.08);
   sparkMat.emissiveColor = new Color3(1, 0.16, 0.01);
+
+  const weaponMat = new StandardMaterial("sidearm-polymer", scene);
+  weaponMat.diffuseColor = new Color3(0.055, 0.065, 0.07);
+  weaponMat.specularColor = new Color3(0.22, 0.24, 0.26);
+  const weaponMetal = new StandardMaterial("sidearm-metal", scene);
+  weaponMetal.diffuseColor = new Color3(0.2, 0.22, 0.22);
+  weaponMetal.specularColor = new Color3(0.7, 0.72, 0.7);
+  const weaponAccent = new StandardMaterial("sidearm-accent", scene);
+  weaponAccent.diffuseColor = new Color3(0.68, 0.18, 0.08);
+  weaponAccent.emissiveColor = new Color3(0.12, 0.018, 0.006);
 
   const ground = MeshBuilder.CreateGround("campus-ground", { width: 120, height: 120 }, scene);
   ground.material = lawn;
@@ -298,15 +309,52 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   camera.rotation = new Vector3(0, Math.PI, 0);
   scene.activeCamera = camera;
 
+  const weaponRoot = new TransformNode("operator-sidearm", scene);
+  weaponRoot.parent = camera;
+  weaponRoot.position = new Vector3(0.38, -0.5, 1.05);
+  weaponRoot.scaling = new Vector3(0.62, 0.62, 0.62);
+  weaponRoot.rotation = new Vector3(-0.04, 0.02, 0.02);
+  const weaponFrame = MeshBuilder.CreateBox("sidearm-frame", { width: 0.3, height: 0.23, depth: 0.82 }, scene);
+  weaponFrame.parent = weaponRoot;
+  weaponFrame.position = new Vector3(0, 0.06, 0.1);
+  weaponFrame.material = weaponMat;
+  const weaponSlide = MeshBuilder.CreateBox("sidearm-slide", { width: 0.34, height: 0.16, depth: 0.64 }, scene);
+  weaponSlide.parent = weaponRoot;
+  weaponSlide.position = new Vector3(0, 0.2, 0.05);
+  weaponSlide.material = weaponMetal;
+  const weaponBarrel = MeshBuilder.CreateCylinder("sidearm-barrel", { diameter: 0.1, height: 0.28, tessellation: 12 }, scene);
+  weaponBarrel.parent = weaponRoot;
+  weaponBarrel.rotation.x = Math.PI / 2;
+  weaponBarrel.position = new Vector3(0, 0.2, -0.38);
+  weaponBarrel.material = weaponMetal;
+  const weaponGrip = MeshBuilder.CreateBox("sidearm-grip", { width: 0.22, height: 0.58, depth: 0.25 }, scene);
+  weaponGrip.parent = weaponRoot;
+  weaponGrip.position = new Vector3(0, -0.27, 0.28);
+  weaponGrip.rotation.x = -0.18;
+  weaponGrip.material = weaponMat;
+  const weaponSight = MeshBuilder.CreateBox("sidearm-sight", { width: 0.07, height: 0.07, depth: 0.14 }, scene);
+  weaponSight.parent = weaponRoot;
+  weaponSight.position = new Vector3(0, 0.3, -0.04);
+  weaponSight.material = weaponAccent;
+  const weaponMagazine = MeshBuilder.CreateBox("sidearm-magazine", { width: 0.16, height: 0.42, depth: 0.16 }, scene);
+  weaponMagazine.parent = weaponRoot;
+  weaponMagazine.position = new Vector3(0, -0.53, 0.27);
+  weaponMagazine.rotation.x = -0.18;
+  weaponMagazine.material = weaponMetal;
+  const weaponMeshes = [weaponFrame, weaponSlide, weaponBarrel, weaponGrip, weaponSight, weaponMagazine];
+  weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
+
   let health = 100;
   let ammo = 30;
-  let reserve = 90;
+  const reserve = Number.POSITIVE_INFINITY;
   let score = 0;
   let wave = 1;
   let waveClearTimer = 0;
   let gameOver = false;
   let lastShot = 0;
   let reloadTimer = 0;
+  const reloadDuration = 1.35;
+  let recoil = 0;
   let hudTimer = 0;
   let demoAngle = 0;
   const enemies: Enemy[] = [];
@@ -364,7 +412,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     if (event.button === 0) shoot();
   };
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.code === "KeyR" && reloadTimer <= 0 && ammo < 30 && reserve > 0) reloadTimer = 1.15;
+    if (event.code === "KeyR" && reloadTimer <= 0 && ammo < 30) startReload();
     if (event.code === "ShiftLeft" || event.code === "ShiftRight") camera.speed = 0.38;
   };
   const onKeyUp = (event: KeyboardEvent) => {
@@ -379,9 +427,11 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   function shoot() {
     const now = performance.now();
-    if (reloadTimer > 0 || now - lastShot < 130 || ammo <= 0) return;
+    if (reloadTimer > 0 || now - lastShot < 130) return;
+    if (ammo <= 0) { startReload(); return; }
     lastShot = now;
     ammo -= 1;
+    recoil = 0.12;
     createMuzzleFlash();
     playShotSound();
     const ray = new Ray(camera.position, camera.getForwardRay().direction, 80);
@@ -402,6 +452,19 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
         }
       }
     }
+    if (ammo === 0) startReload();
+  }
+
+  function startReload() {
+    if (reloadTimer > 0 || ammo >= 30) return;
+    reloadTimer = reloadDuration;
+    playReloadSound();
+  }
+
+  function playReloadSound() {
+    playTone(105, 72, 0.12, 0.025);
+    window.setTimeout(() => playTone(280, 170, 0.09, 0.022), 420);
+    window.setTimeout(() => playTone(170, 430, 0.14, 0.025), 930);
   }
 
   function createMuzzleFlash() {
@@ -474,6 +537,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     score,
     wave,
     enemies: enemies.length,
+    reloading: reloadTimer > 0,
     objective: enemies.length ? "CLEAR THE CENTRAL COURT" : "REINFORCEMENTS INBOUND",
     locked: document.pointerLockElement === canvas,
     player: { x: camera.position.x, z: camera.position.z, angle: camera.rotation.y },
@@ -482,14 +546,20 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
+    recoil = Math.max(0, recoil - delta * 1.8);
+    const sway = Math.sin(performance.now() * 0.004) * 0.006;
+    weaponRoot.position.x = 0.38 + sway;
+    weaponRoot.position.y = -0.5 - recoil;
     if (!gameOver) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
+        const reloadProgress = 1 - Math.max(0, reloadTimer / reloadDuration);
+        weaponSlide.position.z = 0.05 + (reloadProgress < 0.2 ? reloadProgress * 0.35 : 0.07 - Math.max(0, reloadProgress - 0.82) * 0.35);
+        weaponMagazine.position.y = reloadProgress > 0.26 && reloadProgress < 0.68 ? -0.82 : -0.53;
         if (reloadTimer <= 0) {
-          const needed = 30 - ammo;
-          const loaded = Math.min(needed, reserve);
-          ammo += loaded;
-          reserve -= loaded;
+          ammo = 30;
+          weaponSlide.position.z = 0.05;
+          weaponMagazine.position.y = -0.53;
         }
       }
       updateEnemies(delta);

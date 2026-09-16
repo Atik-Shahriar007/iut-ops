@@ -5,7 +5,8 @@ import type { HudState } from "@/game/scene";
 const initialHud: HudState = {
   health: 100,
   ammo: 30,
-  reserve: 90,
+  reserve: Number.POSITIVE_INFINITY,
+  reloading: false,
   score: 0,
   wave: 1,
   enemies: 6,
@@ -84,10 +85,10 @@ export default function App() {
           <div className="health-row"><strong>{String(hud.health).padStart(3, "0")}</strong><span> / 100</span></div>
           <div className="health-track"><i style={{ width: `${hud.health}%` }} /></div>
         </div>
-        <div className="controls-hint"><b>W A S D</b> MOVE <b>SHIFT</b> SPRINT <b>R</b> RELOAD <b>LMB</b> FIRE</div>
+        <div className={`controls-hint ${hud.reloading ? "is-reloading" : ""}`}><b>W A S D</b> MOVE <b>SHIFT</b> SPRINT <b>R</b> RELOAD <b>LMB</b> FIRE</div>
         <div className="ammo-block">
           <div className="ammo-main">{String(hud.ammo).padStart(2, "0")}</div>
-          <div className="ammo-reserve">/ {String(hud.reserve).padStart(3, "0")} <span>9MM</span></div>
+          <div className="ammo-reserve">/ ∞ <span>{hud.reloading ? "RELOADING" : "9MM · UNLIMITED"}</span></div>
         </div>
       </section>
 
