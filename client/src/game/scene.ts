@@ -518,7 +518,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, weaponStock, weaponGrip, weaponSight, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
-  let health = 300;
+  let health = 1000;
   let ammo = 30;
   const reserve = Number.POSITIVE_INFINITY;
   let score = 0;
