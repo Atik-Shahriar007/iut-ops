@@ -526,6 +526,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let killConfirm = 0;
   let damagePulse = 0;
   const enemies: Enemy[] = [];
+  const coverPoints = [
+    new Vector3(-8.5, 0, 10), new Vector3(8.5, 0, 6),
+    new Vector3(-8.5, 0, -10), new Vector3(8.5, 0, -14),
+  ];
   const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number }> = [];
   let audioContext: AudioContext | null = null;
 
@@ -699,7 +703,17 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       enemy.root.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
       if (distance > 7 && distance < 34) {
         enemy.attackTimer -= delta;
-        if (enemy.attackTimer <= 0) {
+        let coverTarget: Vector3 | null = null;
+        if (enemy.kind !== "heavy" && distance < 22) {
+          coverTarget = coverPoints.reduce((closest, point) => (
+            enemy.root.position.subtract(point).lengthSquared() < enemy.root.position.subtract(closest).lengthSquared() ? point : closest
+          ), coverPoints[0]);
+        }
+        const coverDistance = coverTarget ? enemy.root.position.subtract(coverTarget).length() : 0;
+        if (coverTarget && coverDistance > 2.2) {
+          const toCover = coverTarget.subtract(enemy.root.position).normalize().scale(delta * enemy.speed * 0.82);
+          enemy.root.position.addInPlace(new Vector3(toCover.x, 0, toCover.z));
+        } else if (enemy.attackTimer <= 0) {
           const muzzle = enemy.root.position.add(new Vector3(0, 1.45, 0));
           const target = camera.position.add(new Vector3(0, -0.35, 0));
           createEnemyTracer(muzzle, target);
