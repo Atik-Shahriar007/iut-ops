@@ -11,6 +11,7 @@ const initialHud: HudState = {
   wave: 1,
   enemies: 6,
   objective: "CLEAR THE CENTRAL COURT",
+  zone: "PALM AVENUE",
   locked: false,
   hitMarker: 0,
   killConfirm: 0,
@@ -47,11 +48,12 @@ export default function App() {
             <div className="brand-subtitle">CAMPUS RESPONSE UNIT</div>
           </div>
         </div>
-        <div className="mission-chip">MISSION 01 <span>//</span> CENTRAL COURT</div>
+        <div className="mission-chip">MISSION 01 <span>//</span> {hud.zone}</div>
         <div className="status-chip"><i /> LIVE FEED</div>
       </header>
 
       <section className="hud-top-right" aria-label="Mission status">
+        <div className="zone-chip"><span>LOCAL ZONE</span><strong>{hud.zone}</strong></div>
         <div className="hud-label">SECTOR</div>
         <div className="hud-value">IUT · GAZIPUR</div>
         <div className="hud-divider" />

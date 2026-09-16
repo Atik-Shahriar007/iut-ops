@@ -26,6 +26,7 @@ export type HudState = {
   wave: number;
   enemies: number;
   objective: string;
+  zone: string;
   locked: boolean;
   hitMarker: number;
   killConfirm: number;
@@ -725,6 +726,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     enemies: enemies.length,
     reloading: reloadTimer > 0,
     objective: enemies.length ? "CLEAR THE CENTRAL COURT" : waveClearTimer < 0.8 ? "SECTOR SECURED" : "REINFORCEMENTS INBOUND",
+    zone: Math.abs(camera.position.x) < 4 && camera.position.z < -7 && camera.position.z > -16
+      ? "MAIN GATEWAY"
+      : Math.abs(camera.position.x) < 4 && camera.position.z >= -7 && camera.position.z <= 18
+        ? "CENTRAL BRIDGE"
+        : Math.abs(camera.position.x) < 21 && camera.position.z > -18 && camera.position.z < 19
+          ? "WATER COURT"
+          : camera.position.z > 18
+            ? "PALM AVENUE"
+            : "ACADEMIC QUADRANT",
     locked: document.pointerLockElement === canvas,
     hitMarker,
     killConfirm,
