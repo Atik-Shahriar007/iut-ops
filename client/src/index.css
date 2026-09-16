@@ -1,177 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-:root {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-600);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --radius: 0.65rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.235 0.015 65);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.235 0.015 65);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.235 0.015 65);
-  --secondary: oklch(0.98 0.001 286.375);
-  --secondary-foreground: oklch(0.4 0.015 65);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.141 0.005 285.823);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.235 0.015 65);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.623 0.214 259.815);
-}
-
-.dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  button:not(:disabled),
-  [role="button"]:not([aria-disabled="true"]),
-  [type="button"]:not(:disabled),
-  [type="submit"]:not(:disabled),
-  [type="reset"]:not(:disabled),
-  a[href],
-  select:not(:disabled),
-  input[type="checkbox"]:not(:disabled),
-  input[type="radio"]:not(:disabled) {
-    @apply cursor-pointer;
-  }
-}
-
-@layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
-  .container {
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
-    padding-right: 1rem;
-  }
-
-  .flex {
-    min-height: 0;
-    min-width: 0;
-  }
-
-  @media (min-width: 640px) {
-    .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
-      padding-right: 1.5rem;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .container {
-      padding-left: 2rem; /* 32px - desktop padding */
-      padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
-    }
-  }
-}
+:root { font-family: 'Barlow Condensed', sans-serif; color: #f5eadb; background: #090d0d; font-synthesis: none; }
+* { box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: #090d0d; }
+button { font: inherit; }
+.game-shell { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #101313; isolation: isolate; }
+.game-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; cursor: crosshair; }
+.scanlines { position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: .11; background: repeating-linear-gradient(0deg, rgba(255,255,255,.12) 0, rgba(255,255,255,.12) 1px, transparent 1px, transparent 4px); mix-blend-mode: overlay; }
+.mission-bar { position: absolute; z-index: 4; top: 0; left: 0; right: 0; height: 82px; display: flex; align-items: center; padding: 0 38px; border-bottom: 1px solid rgba(247, 216, 182, .22); background: linear-gradient(180deg, rgba(7, 10, 10, .82), rgba(7, 10, 10, .08)); }
+.brand-lockup { display: flex; align-items: center; gap: 13px; min-width: 260px; }
+.brand-mark { display: grid; place-items: center; width: 35px; height: 35px; border: 1px solid #df7e48; color: #f1a06b; font-size: 22px; font-weight: 700; transform: skew(-10deg); }
+.brand-title { color: #fff7ee; font-size: 25px; line-height: 20px; font-weight: 700; letter-spacing: .15em; }
+.brand-subtitle, .eyebrow { color: #e99762; font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: .16em; }
+.mission-chip { margin: 0 auto; color: #e4d4c4; font-family: 'Space Mono', monospace; font-size: 10px; letter-spacing: .12em; }
+.mission-chip span { color: #d67242; padding: 0 8px; }
+.status-chip { display: flex; align-items: center; gap: 8px; color: #cfdbc8; font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .1em; }
+.status-chip i { width: 7px; height: 7px; display: block; border-radius: 999px; background: #b5e37e; box-shadow: 0 0 12px #b5e37e; }
+.hud-top-right { position: absolute; z-index: 4; right: 38px; top: 112px; width: 142px; text-align: right; border-right: 2px solid #cc7547; padding-right: 11px; }
+.hud-label { color: rgba(245, 234, 219, .55); font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .13em; }
+.hud-value { margin: 2px 0 13px; color: #fff4e8; font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; }
+.hud-value.accent { color: #f5a571; font-size: 21px; margin-bottom: 0; }
+.hud-divider { height: 1px; margin: 0 0 12px auto; width: 70px; background: rgba(255,255,255,.18); }
+.crosshair { position: absolute; z-index: 4; left: 50%; top: 50%; width: 34px; height: 34px; transform: translate(-50%, -50%); opacity: .82; pointer-events: none; }
+.crosshair:before, .crosshair:after, .crosshair span { content: ''; position: absolute; display: block; background: #f6e1cc; box-shadow: 0 0 7px rgba(251, 168, 115, .7); }
+.crosshair:before { left: 16px; top: 0; width: 2px; height: 10px; }.crosshair:after { left: 16px; bottom: 0; width: 2px; height: 10px; }.crosshair span:first-child { left: 0; top: 16px; width: 10px; height: 2px; }.crosshair span:last-child { right: 0; top: 16px; width: 10px; height: 2px; }
+.objective-card { position: absolute; z-index: 4; top: 128px; left: 38px; width: 274px; padding: 12px 14px 13px; border-left: 2px solid #d37443; background: linear-gradient(90deg, rgba(8, 11, 11, .7), rgba(8, 11, 11, .08)); }
+.objective-title { margin-top: 5px; color: #fff3e5; font-size: 21px; font-weight: 600; letter-spacing: .05em; }
+.objective-meta { margin-top: 5px; color: rgba(250, 226, 204, .56); font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: .06em; }.objective-meta span { color: #e4824f; margin: 0 4px; }
+.bottom-hud { position: absolute; z-index: 4; left: 38px; right: 38px; bottom: 34px; display: flex; align-items: flex-end; justify-content: space-between; }
+.health-block { width: 210px; }.health-row { margin-top: 3px; color: #fff5ea; font-family: 'Space Mono', monospace; }.health-row strong { font-size: 27px; }.health-row span { color: rgba(255,255,255,.42); font-size: 11px; }.health-track { height: 4px; margin-top: 8px; width: 100%; background: rgba(255,255,255,.16); }.health-track i { display: block; height: 100%; background: linear-gradient(90deg, #b8e27c, #e1a55e); box-shadow: 0 0 11px rgba(199, 226, 127, .54); transition: width .2s ease; }
+.controls-hint { color: rgba(250, 232, 217, .6); font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: .1em; }.controls-hint b { color: #f5bd90; font-size: 9px; margin: 0 4px; }
+.ammo-block { display: flex; align-items: baseline; gap: 6px; min-width: 190px; justify-content: flex-end; }.ammo-main { color: #fff4e6; font-family: 'Space Mono', monospace; font-size: 43px; line-height: 37px; font-weight: 700; letter-spacing: -.08em; }.ammo-reserve { color: #e89861; font-family: 'Space Mono', monospace; font-size: 15px; }.ammo-reserve span { display: block; margin-top: 3px; color: rgba(255,255,255,.45); font-size: 8px; letter-spacing: .2em; text-align: right; }
+.score-chip { position: absolute; z-index: 4; right: 38px; bottom: 118px; color: rgba(255,255,255,.55); font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: .12em; }.score-chip strong { color: #f6c293; margin-left: 8px; font-size: 13px; }
+.start-prompt { position: absolute; z-index: 4; left: 50%; bottom: 126px; transform: translateX(-50%); color: #f0ded0; font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: .13em; text-shadow: 0 2px 9px #000; white-space: nowrap; }.start-prompt span { color: #d77948; padding: 0 8px; }
+.game-over-backdrop { position: absolute; z-index: 10; inset: 0; display: grid; place-items: center; background: rgba(5, 8, 8, .65); backdrop-filter: blur(7px); }.game-over-card { width: min(450px, calc(100vw - 48px)); padding: 36px 38px 38px; border: 1px solid rgba(225, 137, 84, .6); border-top: 3px solid #d77543; background: linear-gradient(140deg, rgba(21, 24, 22, .96), rgba(36, 19, 14, .95)); box-shadow: 0 25px 80px rgba(0,0,0,.5); }.game-over-card h1 { margin: 8px 0 10px; color: #fff2e5; font-size: 42px; line-height: .95; letter-spacing: .04em; }.game-over-card p { margin: 0 0 25px; color: rgba(255,241,226,.66); font-family: 'Space Mono', monospace; font-size: 11px; line-height: 1.7; }.game-over-card button { width: 100%; padding: 13px 16px; border: 0; color: #18100c; background: #e6a16e; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .08em; cursor: pointer; transition: transform .16s ease, background .16s ease; }.game-over-card button:hover { background: #f3bb8f; transform: translateY(-2px); }.game-over-card button span { float: right; font-size: 18px; line-height: 10px; }
+@media (max-width: 720px) { .mission-bar { padding: 0 18px; height: 64px; }.brand-lockup { min-width: 0; }.brand-title { font-size: 19px; }.brand-subtitle, .mission-chip, .status-chip { display: none; }.hud-top-right { top: 88px; right: 18px; }.objective-card { top: 90px; left: 18px; width: 220px; }.bottom-hud { left: 18px; right: 18px; bottom: 22px; }.controls-hint { display: none; }.health-block { width: 145px; }.ammo-block { min-width: 128px; }.ammo-main { font-size: 34px; }.score-chip { right: 18px; bottom: 100px; }.start-prompt { bottom: 102px; font-size: 7px; } }

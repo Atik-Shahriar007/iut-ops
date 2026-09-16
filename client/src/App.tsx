@@ -1,42 +1,95 @@
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
+import { useState } from "react";
+import GameCanvas from "@/components/GameCanvas";
+import type { HudState } from "@/game/scene";
 
+const initialHud: HudState = {
+  health: 100,
+  ammo: 30,
+  reserve: 90,
+  score: 0,
+  wave: 1,
+  enemies: 6,
+  objective: "CLEAR THE CENTRAL COURT",
+  locked: false,
+};
 
-function Router() {
+export default function App() {
+  const [run, setRun] = useState(0);
+  const [hud, setHud] = useState(initialHud);
+  const [gameOver, setGameOver] = useState(false);
+
+  const restart = () => {
+    setGameOver(false);
+    setHud(initialHud);
+    setRun((value) => value + 1);
+  };
+
   return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
+    <main className="game-shell">
+      <GameCanvas
+        restartKey={run}
+        onHud={setHud}
+        onGameOver={() => setGameOver(true)}
+      />
+
+      <div className="scanlines" aria-hidden="true" />
+      <header className="mission-bar">
+        <div className="brand-lockup">
+          <span className="brand-mark">I</span>
+          <div>
+            <div className="brand-title">IUT OPS</div>
+            <div className="brand-subtitle">CAMPUS RESPONSE UNIT</div>
+          </div>
+        </div>
+        <div className="mission-chip">MISSION 01 <span>//</span> CENTRAL COURT</div>
+        <div className="status-chip"><i /> LIVE FEED</div>
+      </header>
+
+      <section className="hud-top-right" aria-label="Mission status">
+        <div className="hud-label">SECTOR</div>
+        <div className="hud-value">IUT · GAZIPUR</div>
+        <div className="hud-divider" />
+        <div className="hud-label">HOSTILES</div>
+        <div className="hud-value accent">{String(hud.enemies).padStart(2, "0")}</div>
+      </section>
+
+      <div className="crosshair" aria-hidden="true"><span /><span /></div>
+
+      <section className="objective-card" aria-live="polite">
+        <div className="eyebrow">CURRENT DIRECTIVE</div>
+        <div className="objective-title">{hud.objective}</div>
+        <div className="objective-meta">WAVE {String(hud.wave).padStart(2, "0")} <span>•</span> WATER COURT APPROACH</div>
+      </section>
+
+      <section className="bottom-hud" aria-label="Player status">
+        <div className="health-block">
+          <div className="eyebrow">VITALS</div>
+          <div className="health-row"><strong>{String(hud.health).padStart(3, "0")}</strong><span> / 100</span></div>
+          <div className="health-track"><i style={{ width: `${hud.health}%` }} /></div>
+        </div>
+        <div className="controls-hint"><b>W A S D</b> MOVE <b>SHIFT</b> SPRINT <b>R</b> RELOAD <b>LMB</b> FIRE</div>
+        <div className="ammo-block">
+          <div className="ammo-main">{String(hud.ammo).padStart(2, "0")}</div>
+          <div className="ammo-reserve">/ {String(hud.reserve).padStart(3, "0")} <span>9MM</span></div>
+        </div>
+      </section>
+
+      <div className="score-chip">SCORE <strong>{String(hud.score).padStart(5, "0")}</strong></div>
+
+      {!hud.locked && !gameOver && (
+        <div className="start-prompt">CLICK TO DEPLOY <span>·</span> MOUSE LOOK ENABLES POINTER LOCK</div>
+      )}
+
+      {gameOver && (
+        <div className="game-over-backdrop">
+          <div className="game-over-card">
+            <div className="eyebrow">SIGNAL LOST</div>
+            <h1>OPERATOR DOWN</h1>
+            <p>The central court is still contested. Re-enter the sector and push the next wave back.</p>
+            <button onClick={restart}>REDEPLOY <span>↗</span></button>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
-function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
-}
-
-export default App;
