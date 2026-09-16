@@ -95,6 +95,11 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   water.alpha = 0.82;
   water.specularColor = new Color3(0.52, 0.65, 0.62);
   water.backFaceCulling = false;
+  const waterGlint = new StandardMaterial("water-glint", scene);
+  waterGlint.diffuseColor = new Color3(0.3, 0.72, 0.7);
+  waterGlint.emissiveColor = new Color3(0.04, 0.16, 0.15);
+  waterGlint.alpha = 0.28;
+  waterGlint.backFaceCulling = false;
 
   const dark = new StandardMaterial("arch-shadow", scene);
   dark.diffuseColor = new Color3(0.18, 0.075, 0.05);
@@ -237,7 +242,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   function createCourtParapet(x: number, z: number, length: number, side: number) {
     const railX = x + side * 3.35;
-    box("court-parapet-base", new Vector3(railX, 0.7, z), { width: 0.55, height: 0.62, depth: length }, brick, true);
+    box("court-parapet-base", new Vector3(railX, 0.38, z), { width: 0.55, height: 0.24, depth: length }, brick, true);
     for (let offset = -length / 2 + 1.2; offset < length / 2; offset += 3.6) {
       box("court-parapet-pier", new Vector3(railX, 1.15, z + offset), { width: 0.72, height: 1.18, depth: 0.46 }, brick, true);
       box("court-parapet-cap", new Vector3(railX, 1.72, z + offset + 1.55), { width: 0.62, height: 0.18, depth: 3.1 }, brickDark);
@@ -267,6 +272,18 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   box("water-court-front", new Vector3(0, 0.18, 17), { width: 38.5, height: 0.18, depth: 4.5 }, water);
   box("water-court-left-border", new Vector3(-19.6, 0.28, 1), { width: 0.6, height: 0.4, depth: 38 }, brick, true);
   box("water-court-right-border", new Vector3(19.6, 0.28, 1), { width: 0.6, height: 0.4, depth: 38 }, brick, true);
+  for (const side of [-14, 14]) {
+    for (const z of [-10, -2, 6, 14]) {
+      const glint = box("water-surface-glint", new Vector3(side, 0.3, z), { width: 7.2, height: 0.025, depth: 0.12 }, waterGlint);
+      glint.rotation.y = side < 0 ? -0.12 : 0.12;
+      glint.isPickable = false;
+    }
+  }
+  for (const x of [-10, 0, 10]) {
+    const glint = box("water-back-glint", new Vector3(x, 0.3, -15), { width: 0.12, height: 0.025, depth: 3.4 }, waterGlint);
+    glint.rotation.y = x * 0.01;
+    glint.isPickable = false;
+  }
   createBridge(0, 1, 6.6, 40);
   createCourtParapet(0, 1, 40, -1);
   createCourtParapet(0, 1, 40, 1);
