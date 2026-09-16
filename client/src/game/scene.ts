@@ -719,6 +719,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   }
 
   function playShotSound() { playTone(150, 62, 0.11, 0.035); }
+  function playEnemyShotSound(kind: Enemy["kind"]) {
+    const start = kind === "heavy" ? 92 : kind === "scout" ? 210 : 135;
+    playTone(start, start * 0.42, kind === "heavy" ? 0.18 : 0.13, kind === "heavy" ? 0.045 : 0.026);
+  }
   function playHitSound() { playTone(720, 240, 0.08, 0.025); }
 
   function updateEnemies(delta: number) {
@@ -743,6 +747,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           const muzzle = enemy.root.position.add(new Vector3(0, 1.45, 0));
           const target = camera.position.add(new Vector3(0, -0.35, 0));
           createEnemyTracer(muzzle, target);
+          playEnemyShotSound(enemy.kind);
           createHitEffect(target);
           health = Math.max(0, health - (enemy.kind === "heavy" ? 10 : enemy.kind === "scout" ? 4 : 6));
           damagePulse = 1;
