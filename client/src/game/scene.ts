@@ -41,6 +41,9 @@ type Enemy = {
   body: Mesh;
   head: Mesh;
   health: number;
+  kind: "grunt" | "scout" | "heavy";
+  speed: number;
+  baseScale: Vector3;
   attackTimer: number;
   seed: number;
 };
@@ -125,6 +128,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const enemyGlow = new StandardMaterial("hostile-glow", scene);
   enemyGlow.diffuseColor = new Color3(1, 0.42, 0.12);
   enemyGlow.emissiveColor = new Color3(0.75, 0.18, 0.02);
+  const scoutMat = new StandardMaterial("scout-suit", scene);
+  scoutMat.diffuseColor = new Color3(0.2, 0.35, 0.16);
+  scoutMat.emissiveColor = new Color3(0.025, 0.08, 0.012);
+  const heavyMat = new StandardMaterial("heavy-suit", scene);
+  heavyMat.diffuseColor = new Color3(0.16, 0.18, 0.2);
+  heavyMat.specularColor = new Color3(0.5, 0.5, 0.5);
 
   const muzzleMat = new StandardMaterial("muzzle-flash", scene);
   muzzleMat.diffuseColor = new Color3(1, 0.62, 0.12);
@@ -485,22 +494,26 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let audioContext: AudioContext | null = null;
 
   function spawnEnemy(position: Vector3, seed: number) {
+    const kind: Enemy["kind"] = seed % 5 === 0 ? "heavy" : seed % 3 === 0 ? "scout" : "grunt";
+    const speed = kind === "scout" ? 1.35 : kind === "heavy" ? 0.58 : 0.85;
     const root = new TransformNode(`hostile-${seed}`, scene);
     root.position = position.clone();
     const body = MeshBuilder.CreateBox(`hostile-body-${seed}`, { width: 0.85, height: 1.35, depth: 0.62 }, scene);
     body.position = new Vector3(0, 1.05, 0);
     body.parent = root;
-    body.material = enemyMat;
+    body.material = kind === "scout" ? scoutMat : kind === "heavy" ? heavyMat : enemyMat;
     body.metadata = { enemy: root };
     const head = MeshBuilder.CreateSphere(`hostile-head-${seed}`, { diameter: 0.62, segments: 12 }, scene);
     head.position = new Vector3(0, 2.0, 0);
     head.parent = root;
-    head.material = enemyGlow;
+    head.material = kind === "heavy" ? heavyMat : enemyGlow;
     head.metadata = { enemy: root };
     const shoulder = box(`hostile-shoulder-${seed}`, new Vector3(0, 1.4, 0), { width: 1.25, height: 0.18, depth: 0.76 }, enemyMat);
     shoulder.parent = root;
     shoulder.metadata = { enemy: root };
-    enemies.push({ root, body, head, health: 100, attackTimer: 0, seed });
+    const baseScale = kind === "heavy" ? new Vector3(1.35, 1.2, 1.35) : kind === "scout" ? new Vector3(0.8, 0.9, 0.8) : Vector3.One();
+    root.scaling = baseScale.clone();
+    enemies.push({ root, body, head, health: kind === "heavy" ? 180 : kind === "scout" ? 55 : 100, kind, speed, baseScale, attackTimer: 0, seed });
   }
 
   function clearEnemies() {
@@ -630,12 +643,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   function updateEnemies(delta: number) {
     for (const enemy of enemies) {
-      enemy.root.scaling = Vector3.Lerp(enemy.root.scaling, Vector3.One(), Math.min(1, delta * 8));
+      enemy.root.scaling = Vector3.Lerp(enemy.root.scaling, enemy.baseScale, Math.min(1, delta * 8));
       const toPlayer = camera.position.subtract(enemy.root.position);
       const distance = toPlayer.length();
       enemy.root.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
       if (distance > 2.5) {
-        const step = toPlayer.normalize().scale(Math.min(delta * (0.85 + wave * 0.06), distance - 2.3));
+        const step = toPlayer.normalize().scale(Math.min(delta * (enemy.speed + wave * 0.04), distance - 2.3));
         enemy.root.position.addInPlace(new Vector3(step.x, 0, step.z));
       } else {
         enemy.attackTimer -= delta;
