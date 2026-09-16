@@ -570,7 +570,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           startWave();
         }
       }
-      if (demo) {
+      if (demo && document.pointerLockElement !== canvas) {
         demoAngle += delta * 0.16;
         camera.position = new Vector3(Math.sin(demoAngle) * 27, 3.7, 7 + Math.cos(demoAngle) * 27);
         camera.setTarget(new Vector3(0, 2.3, -10));
