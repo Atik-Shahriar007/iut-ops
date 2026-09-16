@@ -147,6 +147,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const sparkMat = new StandardMaterial("impact-spark", scene);
   sparkMat.diffuseColor = new Color3(1, 0.32, 0.08);
   sparkMat.emissiveColor = new Color3(1, 0.16, 0.01);
+  const smokeMat = new StandardMaterial("muzzle-smoke", scene);
+  smokeMat.diffuseColor = new Color3(0.28, 0.27, 0.24);
+  smokeMat.emissiveColor = new Color3(0.04, 0.035, 0.03);
+  smokeMat.alpha = 0.34;
+  const shellMat = new StandardMaterial("ejected-shell", scene);
+  shellMat.diffuseColor = new Color3(0.65, 0.34, 0.08);
+  shellMat.emissiveColor = new Color3(0.08, 0.025, 0.004);
   const enemyTracerMat = new StandardMaterial("enemy-tracer", scene);
   enemyTracerMat.diffuseColor = new Color3(1, 0.18, 0.04);
   enemyTracerMat.emissiveColor = new Color3(1, 0.08, 0.01);
@@ -531,7 +538,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     new Vector3(-8.5, 0, 10), new Vector3(8.5, 0, 6),
     new Vector3(-8.5, 0, -10), new Vector3(8.5, 0, -14),
   ];
-  const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number }> = [];
+  const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number; velocity?: Vector3 }> = [];
   let audioContext: AudioContext | null = null;
 
   function spawnEnemy(position: Vector3, seed: number) {
@@ -658,6 +665,18 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     flash.scaling = new Vector3(1.8, 0.6, 0.6);
     flash.material = muzzleMat;
     transientEffects.push({ mesh: flash, life: 0.075, maxLife: 0.075 });
+    const smoke = MeshBuilder.CreateSphere("muzzle-smoke", { diameter: 0.22, segments: 8 }, scene);
+    smoke.parent = camera;
+    smoke.position = new Vector3(0.34, -0.18, 1.08);
+    smoke.scaling = new Vector3(0.7, 0.7, 1.2);
+    smoke.material = smokeMat;
+    transientEffects.push({ mesh: smoke, life: 0.3, maxLife: 0.3, velocity: new Vector3(0.01, 0.18, -0.04) });
+    const shell = MeshBuilder.CreateCylinder("ejected-shell", { diameter: 0.07, height: 0.18, tessellation: 8 }, scene);
+    shell.parent = camera;
+    shell.position = new Vector3(0.58, -0.26, 0.72);
+    shell.rotation.z = 0.75;
+    shell.material = shellMat;
+    transientEffects.push({ mesh: shell, life: 0.72, maxLife: 0.72, velocity: new Vector3(0.28, 0.38, -0.08) });
   }
 
   function createHitEffect(point: Vector3) {
@@ -839,6 +858,10 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       const effect = transientEffects[index];
       effect.life -= delta;
       const progress = Math.max(0, effect.life / effect.maxLife);
+      if (effect.velocity) {
+        effect.mesh.position.addInPlace(effect.velocity.scale(delta));
+        effect.velocity.y -= delta * 0.9;
+      }
       effect.mesh.scaling.scaleInPlace(0.94);
       effect.mesh.visibility = progress;
       if (effect.life <= 0) {
