@@ -145,6 +145,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const sparkMat = new StandardMaterial("impact-spark", scene);
   sparkMat.diffuseColor = new Color3(1, 0.32, 0.08);
   sparkMat.emissiveColor = new Color3(1, 0.16, 0.01);
+  const enemyTracerMat = new StandardMaterial("enemy-tracer", scene);
+  enemyTracerMat.diffuseColor = new Color3(1, 0.18, 0.04);
+  enemyTracerMat.emissiveColor = new Color3(1, 0.08, 0.01);
 
   const weaponMat = new StandardMaterial("sidearm-polymer", scene);
   weaponMat.diffuseColor = new Color3(0.055, 0.065, 0.07);
@@ -626,6 +629,18 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     transientEffects.push({ mesh: spark, life: 0.24, maxLife: 0.24 });
   }
 
+  function createEnemyTracer(start: Vector3, end: Vector3) {
+    const delta = end.subtract(start);
+    const length = delta.length();
+    const tracer = MeshBuilder.CreateCylinder("enemy-tracer", { diameter: 0.045, height: length, tessellation: 8 }, scene);
+    tracer.position = start.add(end).scale(0.5);
+    tracer.rotation.x = Math.atan2(Math.sqrt(delta.x * delta.x + delta.z * delta.z), delta.y);
+    tracer.rotation.y = Math.atan2(delta.x, delta.z);
+    tracer.material = enemyTracerMat;
+    tracer.isPickable = false;
+    transientEffects.push({ mesh: tracer, life: 0.08, maxLife: 0.08 });
+  }
+
   function getAudioContext() {
     if (!audioContext) audioContext = new AudioContext();
     if (audioContext.state === "suspended") void audioContext.resume();
@@ -655,7 +670,23 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       const toPlayer = camera.position.subtract(enemy.root.position);
       const distance = toPlayer.length();
       enemy.root.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
-      if (distance > 2.5) {
+      if (distance > 7 && distance < 34) {
+        enemy.attackTimer -= delta;
+        if (enemy.attackTimer <= 0) {
+          const muzzle = enemy.root.position.add(new Vector3(0, 1.45, 0));
+          const target = camera.position.add(new Vector3(0, -0.35, 0));
+          createEnemyTracer(muzzle, target);
+          createHitEffect(target);
+          health = Math.max(0, health - (enemy.kind === "heavy" ? 10 : enemy.kind === "scout" ? 4 : 6));
+          damagePulse = 1;
+          enemy.attackTimer = enemy.kind === "heavy" ? 1.7 : enemy.kind === "scout" ? 1.15 : 1.4;
+          if (health === 0 && !gameOver) {
+            gameOver = true;
+            document.exitPointerLock?.();
+            callbacks.onGameOver();
+          }
+        }
+      } else if (distance > 2.5) {
         const step = toPlayer.normalize().scale(Math.min(delta * (enemy.speed + wave * 0.04), distance - 2.3));
         enemy.root.position.addInPlace(new Vector3(step.x, 0, step.z));
       } else {
