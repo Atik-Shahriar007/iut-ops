@@ -652,6 +652,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let audioContext: AudioContext | null = null;
   let engineOscillator: OscillatorNode | null = null;
   let engineGain: GainNode | null = null;
+  let engineLowOscillator: OscillatorNode | null = null;
+  let engineLowGain: GainNode | null = null;
 
   function spawnEnemy(position: Vector3, seed: number) {
     const kind: Enemy["kind"] = seed % 5 === 0 ? "heavy" : seed % 3 === 0 ? "scout" : "grunt";
@@ -884,22 +886,39 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     const context = getAudioContext();
     engineOscillator = context.createOscillator();
     engineGain = context.createGain();
-    engineOscillator.type = "sawtooth";
-    engineOscillator.frequency.value = 78;
+    engineLowOscillator = context.createOscillator();
+    engineLowGain = context.createGain();
+    engineOscillator.type = "triangle";
+    engineLowOscillator.type = "sine";
+    engineOscillator.frequency.value = 58;
+    engineLowOscillator.frequency.value = 29;
     engineGain.gain.value = 0.0001;
+    engineLowGain.gain.value = 0.0001;
     engineOscillator.connect(engineGain).connect(context.destination);
+    engineLowOscillator.connect(engineLowGain).connect(context.destination);
     engineOscillator.start();
-    engineGain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.18);
+    engineLowOscillator.start();
+    engineGain.gain.exponentialRampToValueAtTime(0.010, context.currentTime + 0.28);
+    engineLowGain.gain.exponentialRampToValueAtTime(0.014, context.currentTime + 0.28);
   }
   function stopEngineSound() {
-    if (!engineOscillator || !engineGain || !audioContext) return;
+    if (!engineOscillator || !engineGain || !engineLowOscillator || !engineLowGain || !audioContext) return;
     const oscillator = engineOscillator;
     const gain = engineGain;
+    const lowOscillator = engineLowOscillator;
+    const lowGain = engineLowGain;
     engineOscillator = null;
     engineGain = null;
+    engineLowOscillator = null;
+    engineLowGain = null;
     gain.gain.cancelScheduledValues(audioContext.currentTime);
     gain.gain.setTargetAtTime(0.0001, audioContext.currentTime, 0.06);
-    window.setTimeout(() => oscillator.stop(), 260);
+    lowGain.gain.cancelScheduledValues(audioContext.currentTime);
+    lowGain.gain.setTargetAtTime(0.0001, audioContext.currentTime, 0.06);
+    window.setTimeout(() => {
+      oscillator.stop();
+      lowOscillator.stop();
+    }, 260);
   }
 
   function playShotSound() { playTone(150, 62, 0.11, 0.035); }
@@ -1053,9 +1072,12 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     weaponRoot.rotation.x = -0.08 - recoil * 0.28;
     weaponRoot.rotation.y = 0.02 + recoil * 0.08;
     weaponRoot.rotation.z = (sprinting ? -0.08 : 0) - recoil * 0.12;
-    if (engineOscillator && engineGain && audioContext) {
-      engineOscillator.frequency.setTargetAtTime(78 + Math.abs(carVelocity) * 24, audioContext.currentTime, 0.06);
-      engineGain.gain.setTargetAtTime(driving ? 0.042 + Math.abs(carVelocity) * 0.0015 : 0.0001, audioContext.currentTime, 0.08);
+    if (engineOscillator && engineGain && engineLowOscillator && engineLowGain && audioContext) {
+      const engineRpm = 58 + Math.abs(carVelocity) * 13;
+      engineOscillator.frequency.setTargetAtTime(engineRpm, audioContext.currentTime, 0.12);
+      engineLowOscillator.frequency.setTargetAtTime(engineRpm * 0.5, audioContext.currentTime, 0.12);
+      engineGain.gain.setTargetAtTime(driving ? 0.008 + Math.abs(carVelocity) * 0.00055 : 0.0001, audioContext.currentTime, 0.12);
+      engineLowGain.gain.setTargetAtTime(driving ? 0.011 + Math.abs(carVelocity) * 0.00035 : 0.0001, audioContext.currentTime, 0.12);
     }
     if (driving && !gameOver && countdown === 0) {
       const throttle = pressedKeys.has("KeyW") ? 1 : pressedKeys.has("KeyS") ? -1 : 0;
@@ -1130,8 +1152,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       cleanup.forEach((remove) => remove());
       clearEnemies();
       transientEffects.forEach((effect) => effect.mesh.dispose());
-      audioContext?.close();
       stopEngineSound();
+      audioContext?.close();
       scene.dispose();
     },
   };
