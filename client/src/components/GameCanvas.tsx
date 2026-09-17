@@ -8,12 +8,13 @@ type Props = {
   onHud: (hud: HudState) => void;
   onGameOver: () => void;
   onMissionComplete: () => void;
+  onCountdown: (value: number) => void;
 };
 
-export default function GameCanvas({ restartKey, onHud, onGameOver, onMissionComplete }: Props) {
+export default function GameCanvas({ restartKey, onHud, onGameOver, onMissionComplete, onCountdown }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const callbacksRef = useRef({ onHud, onGameOver, onMissionComplete });
-  callbacksRef.current = { onHud, onGameOver, onMissionComplete };
+  const callbacksRef = useRef({ onHud, onGameOver, onMissionComplete, onCountdown });
+  callbacksRef.current = { onHud, onGameOver, onMissionComplete, onCountdown };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -31,6 +32,7 @@ export default function GameCanvas({ restartKey, onHud, onGameOver, onMissionCom
       onHud: (hud) => callbacksRef.current.onHud(hud),
       onGameOver: () => callbacksRef.current.onGameOver(),
       onMissionComplete: () => callbacksRef.current.onMissionComplete(),
+      onCountdown: (value) => callbacksRef.current.onCountdown(value),
     }).then((created) => {
       if (disposed) {
         created.dispose();

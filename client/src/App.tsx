@@ -26,11 +26,13 @@ export default function App() {
   const [hud, setHud] = useState(initialHud);
   const [gameOver, setGameOver] = useState(false);
   const [missionComplete, setMissionComplete] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   const restart = () => {
     setGameOver(false);
     setMissionComplete(false);
     setHud(initialHud);
+    setCountdown(3);
     setRun((value) => value + 1);
   };
 
@@ -41,6 +43,7 @@ export default function App() {
         onHud={setHud}
         onGameOver={() => setGameOver(true)}
         onMissionComplete={() => setMissionComplete(true)}
+        onCountdown={setCountdown}
       />
 
       <div className="scanlines" aria-hidden="true" />
@@ -108,6 +111,13 @@ export default function App() {
 
       {!hud.locked && !gameOver && (
         <div className="start-prompt">CLICK TO DEPLOY <span>·</span> MOUSE LOOK ENABLES POINTER LOCK</div>
+      )}
+
+      {countdown > 0 && !gameOver && !missionComplete && (
+        <div className="countdown-overlay" aria-live="assertive">
+          <div className="countdown-kicker">DEPLOYMENT SEQUENCE</div>
+          <div className="countdown-number">{countdown === 1 ? "START" : countdown}</div>
+        </div>
       )}
 
       {gameOver && (

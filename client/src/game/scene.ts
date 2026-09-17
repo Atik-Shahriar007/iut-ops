@@ -41,6 +41,7 @@ type Callbacks = {
   onHud: (hud: HudState) => void;
   onGameOver: () => void;
   onMissionComplete: () => void;
+  onCountdown: (value: number) => void;
 };
 
 type Enemy = {
@@ -636,6 +637,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let hitMarker = 0;
   let killConfirm = 0;
   let damagePulse = 0;
+  let started = false;
+  let countdown = 3;
+  let countdownElapsed = 0;
   let driving = false;
   let carVelocity = 0;
   const pressedKeys = new Set<string>();
@@ -646,6 +650,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   ];
   const transientEffects: Array<{ mesh: Mesh; life: number; maxLife: number; velocity?: Vector3 }> = [];
   let audioContext: AudioContext | null = null;
+  let engineOscillator: OscillatorNode | null = null;
+  let engineGain: GainNode | null = null;
 
   function spawnEnemy(position: Vector3, seed: number) {
     const kind: Enemy["kind"] = seed % 5 === 0 ? "heavy" : seed % 3 === 0 ? "scout" : "grunt";
@@ -715,6 +721,13 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     if (gameOver) return;
     if (document.pointerLockElement !== canvas) {
       canvas.requestPointerLock();
+      if (!started) {
+        started = true;
+        countdown = 3;
+        countdownElapsed = 0;
+        callbacks.onCountdown(countdown);
+        playTone(460, 390, 0.12, 0.025);
+      }
       return;
     }
     if (event.button === 0) shoot();
@@ -726,12 +739,14 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       if (driving) {
         driving = false;
         carVelocity = 0;
+        stopEngineSound();
         weaponRoot.setEnabled(true);
         camera.speed = sprinting ? 0.38 : 0.22;
         camera.position = carRoot.position.add(new Vector3(2.4, 1.15, 0));
       } else if (carDistance < 5.2) {
         driving = true;
         carVelocity = 0;
+        startEngineSound();
         weaponRoot.setEnabled(false);
         camera.speed = 0;
         const carForward = new Vector3(Math.sin(carRoot.rotation.y), 0, Math.cos(carRoot.rotation.y));
@@ -864,6 +879,28 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     oscillator.start();
     oscillator.stop(context.currentTime + duration);
   }
+  function startEngineSound() {
+    if (engineOscillator) return;
+    const context = getAudioContext();
+    engineOscillator = context.createOscillator();
+    engineGain = context.createGain();
+    engineOscillator.type = "sawtooth";
+    engineOscillator.frequency.value = 78;
+    engineGain.gain.value = 0.0001;
+    engineOscillator.connect(engineGain).connect(context.destination);
+    engineOscillator.start();
+    engineGain.gain.exponentialRampToValueAtTime(0.045, context.currentTime + 0.18);
+  }
+  function stopEngineSound() {
+    if (!engineOscillator || !engineGain || !audioContext) return;
+    const oscillator = engineOscillator;
+    const gain = engineGain;
+    engineOscillator = null;
+    engineGain = null;
+    gain.gain.cancelScheduledValues(audioContext.currentTime);
+    gain.gain.setTargetAtTime(0.0001, audioContext.currentTime, 0.06);
+    window.setTimeout(() => oscillator.stop(), 260);
+  }
 
   function playShotSound() { playTone(150, 62, 0.11, 0.035); }
   function playEnemyShotSound(kind: Enemy["kind"]) {
@@ -979,6 +1016,15 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
 
   const onBeforeRender = scene.onBeforeRenderObservable.add(() => {
     const delta = Math.min(0.05, engine.getDeltaTime() / 1000);
+    if (started && countdown > 0) {
+      countdownElapsed += delta;
+      if (countdownElapsed >= 1) {
+        countdownElapsed -= 1;
+        countdown -= 1;
+        if (countdown > 0) playTone(460 - countdown * 35, 380 - countdown * 25, 0.1, 0.022);
+        callbacks.onCountdown(countdown);
+      }
+    }
     const movedDistance = Vector3.Distance(camera.position, lastFootstepPosition);
     if (movedDistance > 0.012) {
       footstepTimer -= delta;
@@ -1007,7 +1053,11 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     weaponRoot.rotation.x = -0.08 - recoil * 0.28;
     weaponRoot.rotation.y = 0.02 + recoil * 0.08;
     weaponRoot.rotation.z = (sprinting ? -0.08 : 0) - recoil * 0.12;
-    if (driving && !gameOver) {
+    if (engineOscillator && engineGain && audioContext) {
+      engineOscillator.frequency.setTargetAtTime(78 + Math.abs(carVelocity) * 24, audioContext.currentTime, 0.06);
+      engineGain.gain.setTargetAtTime(driving ? 0.042 + Math.abs(carVelocity) * 0.0015 : 0.0001, audioContext.currentTime, 0.08);
+    }
+    if (driving && !gameOver && countdown === 0) {
       const throttle = pressedKeys.has("KeyW") ? 1 : pressedKeys.has("KeyS") ? -1 : 0;
       carVelocity += throttle * delta * 10;
       carVelocity *= throttle === 0 ? Math.max(0, 1 - delta * 2.8) : 1;
@@ -1021,7 +1071,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       camera.position.copyFrom(carRoot.position.subtract(forward.scale(7)).add(new Vector3(0, 4.1, 0)));
       camera.setTarget(carRoot.position.add(forward.scale(8)).add(new Vector3(0, 1.0, 0)));
     }
-    if (!gameOver) {
+    if (!gameOver && countdown === 0) {
       if (reloadTimer > 0) {
         reloadTimer -= delta;
         const reloadProgress = 1 - Math.max(0, reloadTimer / reloadDuration);
@@ -1071,6 +1121,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   });
 
   callbacks.onHud(hudSnapshot());
+  callbacks.onCountdown(countdown);
 
   return {
     scene,
@@ -1080,6 +1131,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       clearEnemies();
       transientEffects.forEach((effect) => effect.mesh.dispose());
       audioContext?.close();
+      stopEngineSound();
       scene.dispose();
     },
   };
