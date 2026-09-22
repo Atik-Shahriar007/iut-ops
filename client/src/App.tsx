@@ -26,11 +26,29 @@ export default function App() {
   const [hud, setHud] = useState(initialHud);
   const [gameOver, setGameOver] = useState(false);
   const [missionComplete, setMissionComplete] = useState(false);
+  const [startMenu, setStartMenu] = useState(true);
   const [countdown, setCountdown] = useState(3);
+
+  const beginMission = () => {
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(420, context.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(760, context.currentTime + 0.12);
+    gain.gain.setValueAtTime(0.028, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.14);
+    oscillator.connect(gain).connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.14);
+    oscillator.addEventListener("ended", () => void context.close(), { once: true });
+    setStartMenu(false);
+  };
 
   const restart = () => {
     setGameOver(false);
     setMissionComplete(false);
+    setStartMenu(true);
     setHud(initialHud);
     setCountdown(3);
     setRun((value) => value + 1);
@@ -109,14 +127,28 @@ export default function App() {
 
       <div className="score-chip">SCORE <strong>{String(hud.score).padStart(5, "0")}</strong></div>
 
-      {!hud.locked && !gameOver && (
+      {!startMenu && !hud.locked && !gameOver && (
         <div className="start-prompt">CLICK TO DEPLOY <span>·</span> MOUSE LOOK ENABLES POINTER LOCK</div>
       )}
 
-      {countdown > 0 && !gameOver && !missionComplete && (
+      {countdown > 0 && !startMenu && !gameOver && !missionComplete && (
         <div className="countdown-overlay" aria-live="assertive">
           <div className="countdown-kicker">DEPLOYMENT SEQUENCE</div>
           <div className="countdown-number">{countdown === 1 ? "START" : countdown}</div>
+        </div>
+      )}
+
+      {startMenu && !gameOver && !missionComplete && (
+        <div className="start-menu-backdrop">
+          <div className="start-menu-card">
+            <div className="start-menu-kicker">IUT CAMPUS // OPERATIONS CONTROL</div>
+            <div className="start-menu-logo"><span>I</span><strong>IUT OPS</strong></div>
+            <p className="start-menu-tagline">CAMPUS RESPONSE UNIT</p>
+            <div className="start-menu-rule" />
+            <p className="start-menu-copy">Secure the central court. Clear five hostile waves. Keep the campus standing.</p>
+            <button className="start-menu-button" onClick={beginMission}>START MISSION <span>↗</span></button>
+            <div className="start-menu-footer"><span>W A S D · MOVE</span><span>F · VEHICLE</span><span>LMB · FIRE</span></div>
+          </div>
         </div>
       )}
 
