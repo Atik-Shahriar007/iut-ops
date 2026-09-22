@@ -680,22 +680,27 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       eye.position = new Vector3(0, -0.08, 0.48);
       eye.material = droneGlow;
       eye.metadata = { enemy: root };
-      const gun = MeshBuilder.CreateCylinder(`hostile-drone-gun-${seed}`, { diameter: 0.12, height: 0.65, tessellation: 10 }, scene);
-      gun.parent = root;
-      gun.rotation.x = Math.PI / 2;
-      gun.position = new Vector3(0, -0.34, 0.56);
-      gun.material = enemyWeaponMat;
-      gun.isPickable = false;
-      [-1, 1].forEach((side) => {
-        const arm = MeshBuilder.CreateBox(`hostile-drone-arm-${seed}-${side}`, { width: 0.12, height: 0.12, depth: 1.3 }, scene);
+      const warhead = MeshBuilder.CreateCylinder(`hostile-drone-warhead-${seed}`, { diameterTop: 0.18, diameterBottom: 0.64, height: 0.78, tessellation: 10 }, scene);
+      warhead.parent = root;
+      warhead.position = new Vector3(0, -0.55, 0.03);
+      warhead.material = enemyWeaponMat;
+      warhead.isPickable = false;
+      const fuse = MeshBuilder.CreateSphere(`hostile-drone-fuse-${seed}`, { diameter: 0.16, segments: 8 }, scene);
+      fuse.parent = root;
+      fuse.position = new Vector3(0, -0.98, 0.03);
+      fuse.material = droneGlow;
+      fuse.isPickable = false;
+      const rotorPositions = [[-0.88, -0.58], [0.88, -0.58], [-0.88, 0.58], [0.88, 0.58]];
+      rotorPositions.forEach(([x, z], index) => {
+        const arm = MeshBuilder.CreateBox(`hostile-drone-arm-${seed}-${index}`, { width: 0.11, height: 0.11, depth: 1.15 }, scene);
         arm.parent = root;
-        arm.position = new Vector3(side * 0.72, 0.03, 0);
-        arm.rotation.y = side * 0.18;
+        arm.position = new Vector3(x * 0.5, 0.03, z * 0.5);
+        arm.rotation.y = Math.atan2(x, z);
         arm.material = droneMat;
         arm.isPickable = false;
-        const rotor = MeshBuilder.CreateCylinder(`hostile-drone-rotor-${seed}-${side}`, { diameter: 0.56, height: 0.04, tessellation: 16 }, scene);
+        const rotor = MeshBuilder.CreateCylinder(`hostile-drone-rotor-${seed}-${index}`, { diameter: 0.48, height: 0.035, tessellation: 16 }, scene);
         rotor.parent = root;
-        rotor.position = new Vector3(side * 1.12, 0.08, 0);
+        rotor.position = new Vector3(x, 0.08, z);
         rotor.material = droneGlow;
         rotor.isPickable = false;
       });
@@ -843,6 +848,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
           score += 100;
           kills += 1;
           killConfirm = 1;
+          if (enemy.kind === "drone") createDroneExplosion(enemy.root.position);
           enemy.root.dispose(false, true);
           const index = enemies.indexOf(enemy);
           if (index >= 0) enemies.splice(index, 1);
@@ -890,6 +896,23 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     spark.position = point.clone();
     spark.material = sparkMat;
     transientEffects.push({ mesh: spark, life: 0.24, maxLife: 0.24 });
+  }
+
+  function createDroneExplosion(point: Vector3) {
+    const fireball = MeshBuilder.CreateSphere("drone-explosion-fireball", { diameter: 1.3, segments: 12 }, scene);
+    fireball.position = point.clone();
+    fireball.material = muzzleMat;
+    transientEffects.push({ mesh: fireball, life: 0.42, maxLife: 0.42 });
+    const shockwave = MeshBuilder.CreateTorus("drone-explosion-shockwave", { diameter: 1.2, thickness: 0.11, tessellation: 20 }, scene);
+    shockwave.position = point.clone();
+    shockwave.rotation.x = Math.PI / 2;
+    shockwave.material = sparkMat;
+    transientEffects.push({ mesh: shockwave, life: 0.55, maxLife: 0.55 });
+    const smoke = MeshBuilder.CreateSphere("drone-explosion-smoke", { diameter: 0.9, segments: 8 }, scene);
+    smoke.position = point.add(new Vector3(0, 0.4, 0));
+    smoke.material = smokeMat;
+    transientEffects.push({ mesh: smoke, life: 1.1, maxLife: 1.1, velocity: new Vector3(0, 0.35, 0) });
+    playTone(115, 42, 0.34, 0.055);
   }
 
   function createEnemyTracer(start: Vector3, end: Vector3) {
@@ -980,27 +1003,28 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       const distance = toPlayer.length();
       if (enemy.kind === "drone") {
         const flightTime = performance.now() * 0.001 + enemy.seed;
-        enemy.root.position.y = 6.2 + Math.sin(flightTime * 2.2) * 0.28;
-        enemy.root.rotation.y += delta * 1.4;
+        const target = camera.position.add(new Vector3(0, 1.0, 0));
+        const pursuit = target.subtract(enemy.root.position);
+        const pursuitDistance = pursuit.length();
+        enemy.root.rotation.y = Math.atan2(pursuit.x, pursuit.z);
         enemy.root.rotation.z = Math.sin(flightTime * 3.1) * 0.08;
-        if (distance > 15 && distance < 42) {
-          enemy.attackTimer -= delta;
-          if (enemy.attackTimer <= 0) {
-            const muzzle = enemy.root.position.add(new Vector3(0, -0.38, 0.72));
-            const target = camera.position.add(new Vector3(0, -0.3, 0));
-            createEnemyTracer(muzzle, target);
-            playEnemyShotSound(enemy.kind);
-            createHitEffect(target);
-            health = Math.max(0, health - 4);
-            damagePulse = 1;
-            enemy.attackTimer = 1.65;
-            if (health === 0 && !gameOver) {
-              gameOver = true;
-              document.exitPointerLock?.();
-              callbacks.onGameOver();
-            }
+        if (pursuitDistance <= 3.1) {
+          createDroneExplosion(enemy.root.position);
+          health = Math.max(0, health - 240);
+          damagePulse = 1;
+          enemy.root.dispose(false, true);
+          const index = enemies.indexOf(enemy);
+          if (index >= 0) enemies.splice(index, 1);
+          if (health === 0 && !gameOver) {
+            gameOver = true;
+            document.exitPointerLock?.();
+            callbacks.onGameOver();
           }
+          continue;
         }
+        const chaseSpeed = 2.6 + Math.min(2.8, Math.max(0, 18 - pursuitDistance) * 0.16);
+        enemy.root.position.addInPlace(pursuit.normalize().scale(delta * chaseSpeed));
+        enemy.root.position.y += Math.sin(flightTime * 5.2) * delta * 0.12;
         continue;
       }
       enemy.root.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
