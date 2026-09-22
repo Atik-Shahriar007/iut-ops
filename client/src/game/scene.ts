@@ -49,7 +49,7 @@ type Enemy = {
   body: Mesh;
   head: Mesh;
   health: number;
-  kind: "grunt" | "scout" | "heavy";
+  kind: "grunt" | "scout" | "heavy" | "drone";
   speed: number;
   baseScale: Vector3;
   attackTimer: number;
@@ -143,6 +143,14 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const heavyMat = new StandardMaterial("heavy-suit", scene);
   heavyMat.diffuseColor = new Color3(0.16, 0.18, 0.2);
   heavyMat.specularColor = new Color3(0.5, 0.5, 0.5);
+  const droneMat = new StandardMaterial("hostile-drone-shell", scene);
+  droneMat.diffuseColor = new Color3(0.08, 0.11, 0.13);
+  droneMat.specularColor = new Color3(0.68, 0.74, 0.78);
+  droneMat.specularPower = 64;
+  const droneGlow = new StandardMaterial("hostile-drone-glow", scene);
+  droneGlow.diffuseColor = new Color3(0.95, 0.18, 0.06);
+  droneGlow.emissiveColor = new Color3(1, 0.06, 0.01);
+  droneGlow.disableLighting = true;
 
   const muzzleMat = new StandardMaterial("muzzle-flash", scene);
   muzzleMat.diffuseColor = new Color3(1, 0.62, 0.12);
@@ -656,10 +664,44 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   let engineLowGain: GainNode | null = null;
 
   function spawnEnemy(position: Vector3, seed: number) {
-    const kind: Enemy["kind"] = seed % 5 === 0 ? "heavy" : seed % 3 === 0 ? "scout" : "grunt";
-    const speed = kind === "scout" ? 1.35 : kind === "heavy" ? 0.58 : 0.85;
+    const kind: Enemy["kind"] = seed % 4 === 0 ? "drone" : seed % 5 === 0 ? "heavy" : seed % 3 === 0 ? "scout" : "grunt";
+    const speed = kind === "drone" ? 1.05 : kind === "scout" ? 1.35 : kind === "heavy" ? 0.58 : 0.85;
     const root = new TransformNode(`hostile-${seed}`, scene);
     root.position = position.clone();
+    if (kind === "drone") {
+      root.position.y = 6.2;
+      const body = MeshBuilder.CreateSphere(`hostile-drone-body-${seed}`, { diameter: 1.05, segments: 12 }, scene);
+      body.parent = root;
+      body.scaling = new Vector3(1.35, 0.62, 1.0);
+      body.material = droneMat;
+      body.metadata = { enemy: root };
+      const eye = MeshBuilder.CreateSphere(`hostile-drone-eye-${seed}`, { diameter: 0.25, segments: 10 }, scene);
+      eye.parent = root;
+      eye.position = new Vector3(0, -0.08, 0.48);
+      eye.material = droneGlow;
+      eye.metadata = { enemy: root };
+      const gun = MeshBuilder.CreateCylinder(`hostile-drone-gun-${seed}`, { diameter: 0.12, height: 0.65, tessellation: 10 }, scene);
+      gun.parent = root;
+      gun.rotation.x = Math.PI / 2;
+      gun.position = new Vector3(0, -0.34, 0.56);
+      gun.material = enemyWeaponMat;
+      gun.isPickable = false;
+      [-1, 1].forEach((side) => {
+        const arm = MeshBuilder.CreateBox(`hostile-drone-arm-${seed}-${side}`, { width: 0.12, height: 0.12, depth: 1.3 }, scene);
+        arm.parent = root;
+        arm.position = new Vector3(side * 0.72, 0.03, 0);
+        arm.rotation.y = side * 0.18;
+        arm.material = droneMat;
+        arm.isPickable = false;
+        const rotor = MeshBuilder.CreateCylinder(`hostile-drone-rotor-${seed}-${side}`, { diameter: 0.56, height: 0.04, tessellation: 16 }, scene);
+        rotor.parent = root;
+        rotor.position = new Vector3(side * 1.12, 0.08, 0);
+        rotor.material = droneGlow;
+        rotor.isPickable = false;
+      });
+      enemies.push({ root, body, head: eye, health: 70, kind, speed, baseScale: Vector3.One(), attackTimer: 1.2, seed });
+      return;
+    }
     const body = MeshBuilder.CreateBox(`hostile-body-${seed}`, { width: 0.85, height: 1.35, depth: 0.62 }, scene);
     body.position = new Vector3(0, 1.05, 0);
     body.parent = root;
@@ -936,6 +978,31 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
       enemy.root.scaling = Vector3.Lerp(enemy.root.scaling, enemy.baseScale, Math.min(1, delta * 8));
       const toPlayer = camera.position.subtract(enemy.root.position);
       const distance = toPlayer.length();
+      if (enemy.kind === "drone") {
+        const flightTime = performance.now() * 0.001 + enemy.seed;
+        enemy.root.position.y = 6.2 + Math.sin(flightTime * 2.2) * 0.28;
+        enemy.root.rotation.y += delta * 1.4;
+        enemy.root.rotation.z = Math.sin(flightTime * 3.1) * 0.08;
+        if (distance > 15 && distance < 42) {
+          enemy.attackTimer -= delta;
+          if (enemy.attackTimer <= 0) {
+            const muzzle = enemy.root.position.add(new Vector3(0, -0.38, 0.72));
+            const target = camera.position.add(new Vector3(0, -0.3, 0));
+            createEnemyTracer(muzzle, target);
+            playEnemyShotSound(enemy.kind);
+            createHitEffect(target);
+            health = Math.max(0, health - 4);
+            damagePulse = 1;
+            enemy.attackTimer = 1.65;
+            if (health === 0 && !gameOver) {
+              gameOver = true;
+              document.exitPointerLock?.();
+              callbacks.onGameOver();
+            }
+          }
+        }
+        continue;
+      }
       enemy.root.rotation.y = Math.atan2(toPlayer.x, toPlayer.z);
       if (distance > 7 && distance < 34) {
         enemy.attackTimer -= delta;
