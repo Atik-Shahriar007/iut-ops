@@ -14,13 +14,6 @@ import { Scene } from "@babylonjs/core/scene";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTexture";
-import { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration";
-import { ShadowGenerator } from "@babylonjs/core/Lights/Shadows/shadowGenerator";
-import "@babylonjs/core/Lights/Shadows/shadowGeneratorSceneComponent";
-import { MirrorTexture } from "@babylonjs/core/Materials/Textures/mirrorTexture";
-import { Plane } from "@babylonjs/core/Maths/math.plane";
-import { DefaultRenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/defaultRenderingPipeline";
-import { SSAO2RenderingPipeline } from "@babylonjs/core/PostProcesses/RenderPipeline/Pipelines/ssao2RenderingPipeline";
 import "@babylonjs/core/Shaders/default.vertex";
 import "@babylonjs/core/Shaders/default.fragment";
 import type { Nullable } from "@babylonjs/core/types";
@@ -72,64 +65,46 @@ const BRICK_URL = "/manus-storage/iut-brick-texture_ec5cddf1.png";
 
 export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement, callbacks: Callbacks): Promise<GameHandle> {
   const scene = new Scene(engine);
-  const skyColor = new Color4(0.5, 0.72, 0.85, 1);
-  scene.clearColor = skyColor;
-  // A single, calmer tonemapped exposure curve replaces the old flat 1.05/1.04
-  // exposure+contrast pair, which combined with several bright point lights to
-  // blow highlights out to flat, shadeless color (the "Minecraft" look).
-  scene.imageProcessingConfiguration.exposure = 1.0;
-  scene.imageProcessingConfiguration.contrast = 1.15;
-  scene.imageProcessingConfiguration.toneMappingEnabled = true;
-  scene.imageProcessingConfiguration.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_ACES;
-  // Gentle depth fog so distant buildings/trees recede instead of reading as
-  // a flat painted backdrop; kept light so the scene stays bright daytime.
-  scene.fogMode = Scene.FOGMODE_LINEAR;
-  scene.fogColor = new Color3(skyColor.r, skyColor.g, skyColor.b);
-  scene.fogStart = 55;
-  scene.fogEnd = 150;
+  scene.clearColor = new Color4(0.46, 0.68, 0.82, 1);
+  scene.imageProcessingConfiguration.exposure = 1.05;
+  scene.imageProcessingConfiguration.contrast = 1.04;
   scene.collisionsEnabled = true;
   scene.gravity = new Vector3(0, -0.24, 0);
 
-  // The brick photo texture was previously loaded and then immediately
-  // discarded (diffuseTexture set back to null) because a dark diffuseColor
-  // was multiplying with the texture and crushing it too dark. Using a
-  // near-white tint lets the texture's own color carry the material instead.
   const brickTexture = new Texture(BRICK_URL, scene);
   brickTexture.uScale = 2.5;
   brickTexture.vScale = 2.5;
   const brick = new StandardMaterial("campus-brick", scene);
-  brick.diffuseTexture = brickTexture;
-  brick.diffuseColor = new Color3(0.98, 0.82, 0.76);
-  brick.specularColor = new Color3(0.05, 0.04, 0.03);
-  brick.specularPower = 24;
+  brick.diffuseTexture = null;
+  brick.diffuseColor = new Color3(0.78, 0.3, 0.2);
+  brick.specularColor = new Color3(0.12, 0.08, 0.06);
 
   const paverTexture = new Texture(BRICK_URL, scene);
   paverTexture.uScale = 18;
   paverTexture.vScale = 42;
 
   const brickDark = new StandardMaterial("dark-brick", scene);
-  brickDark.diffuseColor = new Color3(0.4, 0.16, 0.11);
-  brickDark.specularColor = new Color3(0.06, 0.04, 0.03);
+  brickDark.diffuseColor = new Color3(0.48, 0.15, 0.09);
+  brickDark.specularColor = new Color3(0.08, 0.04, 0.02);
 
   const road = new StandardMaterial("brick-paving", scene);
-  road.diffuseTexture = paverTexture;
-  road.diffuseColor = new Color3(0.95, 0.78, 0.7);
-  road.specularColor = new Color3(0.08, 0.06, 0.05);
+  road.diffuseTexture = null;
+  road.diffuseColor = new Color3(0.74, 0.34, 0.22);
+  road.emissiveColor = new Color3(0.035, 0.012, 0.008);
+  road.specularColor = new Color3(0.12, 0.08, 0.05);
 
   const lawn = new StandardMaterial("lawn", scene);
-  lawn.diffuseColor = new Color3(0.1, 0.32, 0.14);
-  lawn.specularColor = new Color3(0.02, 0.04, 0.02);
+  lawn.diffuseColor = new Color3(0.09, 0.28, 0.12);
+  lawn.specularColor = new Color3(0.025, 0.05, 0.02);
 
   const trim = new StandardMaterial("sandstone-trim", scene);
-  trim.diffuseColor = new Color3(0.68, 0.36, 0.18);
-  trim.specularColor = new Color3(0.1, 0.08, 0.06);
+  trim.diffuseColor = new Color3(0.72, 0.38, 0.17);
 
   const water = new StandardMaterial("reflective-water", scene);
-  water.diffuseColor = new Color3(0.05, 0.22, 0.26);
-  water.emissiveColor = new Color3(0.01, 0.035, 0.04);
-  water.alpha = 0.85;
-  water.specularColor = new Color3(0.65, 0.78, 0.75);
-  water.specularPower = 96;
+  water.diffuseColor = new Color3(0.08, 0.3, 0.34);
+  water.emissiveColor = new Color3(0.018, 0.07, 0.08);
+  water.alpha = 0.82;
+  water.specularColor = new Color3(0.52, 0.65, 0.62);
   water.backFaceCulling = false;
   const waterGlint = new StandardMaterial("water-glint", scene);
   waterGlint.diffuseColor = new Color3(0.3, 0.72, 0.7);
@@ -138,12 +113,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   waterGlint.backFaceCulling = false;
   const animatedWater: Mesh[] = [];
 
-  // Recessed window/arch openings need to read as genuine shadowed negative
-  // space, not a flat dark-glowing panel, so emissive is dropped to near zero.
   const dark = new StandardMaterial("arch-shadow", scene);
-  dark.diffuseColor = new Color3(0.05, 0.03, 0.025);
-  dark.specularColor = new Color3(0, 0, 0);
-  dark.emissiveColor = new Color3(0.004, 0.002, 0.001);
+  dark.diffuseColor = new Color3(0.18, 0.075, 0.05);
+  dark.emissiveColor = new Color3(0.05, 0.018, 0.01);
 
   const leaf = new StandardMaterial("palm-leaf", scene);
   leaf.diffuseColor = new Color3(0.04, 0.29, 0.1);
@@ -196,14 +168,9 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   const weaponMetal = new StandardMaterial("sidearm-metal", scene);
   weaponMetal.diffuseColor = new Color3(0.2, 0.22, 0.22);
   weaponMetal.specularColor = new Color3(0.7, 0.72, 0.7);
-  weaponMetal.specularPower = 48;
   const weaponAccent = new StandardMaterial("sidearm-accent", scene);
   weaponAccent.diffuseColor = new Color3(0.28, 0.035, 0.018);
   weaponAccent.emissiveColor = new Color3(0.05, 0.004, 0.002);
-  const reticleMat = new StandardMaterial("sidearm-reticle", scene);
-  reticleMat.diffuseColor = new Color3(0.05, 0.005, 0.002);
-  reticleMat.emissiveColor = new Color3(1, 0.15, 0.06);
-  reticleMat.disableLighting = true;
   const glove = new StandardMaterial("tactical-gloves", scene);
   glove.diffuseColor = new Color3(0.035, 0.045, 0.05);
   glove.specularColor = new Color3(0.14, 0.16, 0.18);
@@ -261,40 +228,23 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     return mesh;
   }
 
-  // Two boxes tilted to meet at a point — the same trick the original arch
-  // used for its single peak. Now reusable so both the gateway rings and the
-  // window niches can share a real pointed-arch silhouette instead of a
-  // rectangular window with a decorative triangle glued on top.
-  function createPointedCap(namePrefix: string, apex: Vector3, legSpan: number, legHeight: number, legWidth: number, depth: number, material: StandardMaterial, angle = 0.72, collision = false) {
-    const left = box(`${namePrefix}-cap-left`, new Vector3(apex.x - legSpan / 2, apex.y, apex.z), { width: legWidth, height: legHeight, depth }, material, collision);
-    const right = box(`${namePrefix}-cap-right`, new Vector3(apex.x + legSpan / 2, apex.y, apex.z), { width: legWidth, height: legHeight, depth }, material, collision);
-    left.rotation.z = -angle;
-    right.rotation.z = angle;
-    return [left, right];
-  }
-
-  function makeWindowRow(parentX: number, wallFaceZ: number, normal: 1 | -1, width: number, floors: number) {
-    // Windows used to sit as a paper-thin (0.13 deep) decal floating just
-    // outside the wall face. Now they're a real recessed cavity pulled
-    // inward from the face, with a stepped reveal frame and a pointed-arch
-    // cap — so with Phase 1's shadows they read as genuinely carved
-    // openings instead of a flat texture swatch.
-    const insetDepth = 0.6;
-    const voidDepth = 0.5;
+  function makeWindowRow(parentX: number, frontZ: number, width: number, floors: number, side = false) {
     for (let floor = 0; floor < floors; floor += 1) {
       const y = 2.2 + floor * 2.35;
       const count = Math.max(3, Math.floor(width / 3));
       for (let i = 0; i < count; i += 1) {
         const offset = -width / 2 + 1.6 + i * ((width - 3) / Math.max(1, count - 1));
-        const x = parentX + offset;
-        const openingCenterZ = wallFaceZ - normal * (insetDepth * 0.5 + voidDepth * 0.25);
-        const win = box(`arch-window-${parentX}-${floor}-${i}`, new Vector3(x, y, openingCenterZ), { width: 1.05, height: 1.55, depth: voidDepth }, dark);
+        const win = box(`arch-window-${parentX}-${floor}-${i}`, side ? new Vector3(frontZ, y, parentX + offset) : new Vector3(parentX + offset, y, frontZ), side ? { width: 0.13, height: 1.55, depth: 1.05 } : { width: 1.05, height: 1.55, depth: 0.13 }, dark);
         win.isPickable = false;
-        const frameZ = wallFaceZ - normal * 0.03;
-        const trimLeft = box(`arch-window-trim-left-${parentX}-${floor}-${i}`, new Vector3(x - 0.55, y + 0.08, frameZ), { width: 0.12, height: 1.25, depth: insetDepth }, trim);
-        const trimRight = box(`arch-window-trim-right-${parentX}-${floor}-${i}`, new Vector3(x + 0.55, y + 0.08, frameZ), { width: 0.12, height: 1.25, depth: insetDepth }, trim);
-        const [capLeft, capRight] = createPointedCap(`arch-window-cap-${parentX}-${floor}-${i}`, new Vector3(x, y + 0.8, frameZ), 0.6, 0.82, 0.12, insetDepth, trim);
-        [trimLeft, trimRight, capLeft, capRight].forEach((piece) => { piece.isPickable = false; });
+        if (!side) {
+          const trimLeft = box(`arch-window-trim-left-${parentX}-${floor}-${i}`, new Vector3(parentX + offset - 0.55, y + 0.08, frontZ - 0.08), { width: 0.12, height: 1.25, depth: 0.18 }, trim);
+          const trimRight = box(`arch-window-trim-right-${parentX}-${floor}-${i}`, new Vector3(parentX + offset + 0.55, y + 0.08, frontZ - 0.08), { width: 0.12, height: 1.25, depth: 0.18 }, trim);
+          const trimPeakLeft = box(`arch-window-trim-peak-left-${parentX}-${floor}-${i}`, new Vector3(parentX + offset - 0.3, y + 0.8, frontZ - 0.08), { width: 0.12, height: 0.82, depth: 0.18 }, trim);
+          const trimPeakRight = box(`arch-window-trim-peak-right-${parentX}-${floor}-${i}`, new Vector3(parentX + offset + 0.3, y + 0.8, frontZ - 0.08), { width: 0.12, height: 0.82, depth: 0.18 }, trim);
+          trimPeakLeft.rotation.z = -Math.PI / 4;
+          trimPeakRight.rotation.z = Math.PI / 4;
+          [trimLeft, trimRight, trimPeakLeft, trimPeakRight].forEach((piece) => { piece.isPickable = false; });
+        }
       }
     }
   }
@@ -302,9 +252,8 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   function createBuilding(name: string, position: Vector3, width: number, depth: number, height: number, windows = true) {
     const body = box(name, new Vector3(position.x, height / 2, position.z), { width, height, depth }, brick, true);
     if (windows) {
-      const floors = Math.max(1, Math.floor(height / 2.3));
-      makeWindowRow(position.x, position.z - depth / 2, -1, width - 2, floors);
-      makeWindowRow(position.x, position.z + depth / 2, 1, width - 2, floors);
+      makeWindowRow(position.x, position.z - depth / 2 - 0.08, width - 2, Math.max(1, Math.floor(height / 2.3)));
+      makeWindowRow(position.x, position.z + depth / 2 + 0.08, width - 2, Math.max(1, Math.floor(height / 2.3)));
     }
     const towerRadius = 1.15;
     for (const side of [-1, 1]) {
@@ -316,52 +265,21 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     return body;
   }
 
-  // The reference photos (campus archive image 3) show the real gateway as
-  // several concentric pointed-arch rings stepping inward along the
-  // passage depth — not a single flat silhouette. This rebuilds the arch as
-  // a shallow "tunnel" of 3 nested rings: the outer ring keeps the original
-  // (already-tuned) proportions and is the only one with collision, and two
-  // smaller rings are mirrored front/back and set back into the gate block.
   function createArchway(name: string, position: Vector3, scale = 1) {
-    const angle = 0.72;
-    const ringCount = 3;
-    const ringStep = 0.3 * scale;
-    const ringShrink = 0.13;
-
-    for (let ring = 0; ring < ringCount; ring += 1) {
-      const s = scale * (1 - ring * ringShrink);
-      const isOuter = ring === 0;
-      const pillarWidth = 2.35 * s;
-      const pillarHeight = 7.8 * s;
-      const pillarDepth = isOuter ? 2.1 * s : 1.15 * s;
-      const archLegHeight = 4.3 * s;
-      const archLegWidth = 0.9 * s;
-      const zPositions = isOuter ? [position.z] : [position.z - ring * ringStep, position.z + ring * ringStep];
-
-      zPositions.forEach((z, zi) => {
-        const suffix = `${ring}-${zi}`;
-        const pillarLeft = box(`${name}-pillar-left-${suffix}`, new Vector3(position.x - 5.1 * s, pillarHeight / 2, z), { width: pillarWidth, height: pillarHeight, depth: pillarDepth }, brick, isOuter);
-        const pillarRight = box(`${name}-pillar-right-${suffix}`, new Vector3(position.x + 5.1 * s, pillarHeight / 2, z), { width: pillarWidth, height: pillarHeight, depth: pillarDepth }, brick, isOuter);
-        const outerLeft = box(`${name}-peak-left-${suffix}`, new Vector3(position.x - 2.55 * s, 6.55 * s, z), { width: archLegWidth, height: archLegHeight, depth: pillarDepth }, brick, isOuter);
-        const outerRight = box(`${name}-peak-right-${suffix}`, new Vector3(position.x + 2.55 * s, 6.55 * s, z), { width: archLegWidth, height: archLegHeight, depth: pillarDepth }, brick, isOuter);
-        outerLeft.rotation.z = -angle;
-        outerRight.rotation.z = angle;
-        if (!isOuter) {
-          [pillarLeft, pillarRight, outerLeft, outerRight].forEach((piece) => { piece.isPickable = false; });
-        }
-      });
-    }
-
-    // Thin trim ribs hinting at voussoir coursing on both faces of the gate.
-    for (const faceSign of [-1, 1]) {
-      const innerLeft = box(`${name}-inner-arch-left-${faceSign}`, new Vector3(position.x - 2.1 * scale, 6.45 * scale, position.z + faceSign * 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
-      const innerRight = box(`${name}-inner-arch-right-${faceSign}`, new Vector3(position.x + 2.1 * scale, 6.45 * scale, position.z + faceSign * 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
-      innerLeft.rotation.z = -angle;
-      innerRight.rotation.z = angle;
-    }
-
-    const gateDepth = 2.1 * scale + 0.4 * scale;
-    box(`${name}-arch-crown`, new Vector3(position.x, 8.12 * scale, position.z), { width: 2.1 * scale, height: 0.55 * scale, depth: gateDepth }, brickDark, true);
+    const pillarWidth = 2.35 * scale;
+    box(`${name}-left`, new Vector3(position.x - 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
+    box(`${name}-right`, new Vector3(position.x + 5.1 * scale, 3.9 * scale, position.z), { width: pillarWidth, height: 7.8 * scale, depth: 2.1 * scale }, brick, true);
+    const outerArchHeight = 4.3 * scale;
+    const outerAngle = 0.72;
+    const outerLeft = box(`${name}-outer-arch-left`, new Vector3(position.x - 2.55 * scale, 6.55 * scale, position.z), { width: 0.9 * scale, height: outerArchHeight, depth: 2.1 * scale }, brick, true);
+    const outerRight = box(`${name}-outer-arch-right`, new Vector3(position.x + 2.55 * scale, 6.55 * scale, position.z), { width: 0.9 * scale, height: outerArchHeight, depth: 2.1 * scale }, brick, true);
+    outerLeft.rotation.z = -outerAngle;
+    outerRight.rotation.z = outerAngle;
+    const innerLeft = box(`${name}-inner-arch-left`, new Vector3(position.x - 2.1 * scale, 6.45 * scale, position.z - 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
+    const innerRight = box(`${name}-inner-arch-right`, new Vector3(position.x + 2.1 * scale, 6.45 * scale, position.z - 1.12 * scale), { width: 0.28 * scale, height: 3.55 * scale, depth: 0.22 * scale }, trim, true);
+    innerLeft.rotation.z = -outerAngle;
+    innerRight.rotation.z = outerAngle;
+    box(`${name}-arch-crown`, new Vector3(position.x, 8.12 * scale, position.z), { width: 2.1 * scale, height: 0.55 * scale, depth: 2.1 * scale }, brickDark, true);
   }
 
   function createCentralPavilion(position: Vector3) {
@@ -574,73 +492,36 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   }
   [carBody, carHood, carCabin, carRoof].forEach((part) => { part.isPickable = false; });
 
-  // Previously: one hemi + one directional "sun" + four separate point lights
-  // (intensities 8, 4, 5, 2.5) all stacked on the same courtyard. With no
-  // shadow casting to ground any of them, they just summed into a flat,
-  // overexposed wash. The sun is now the single dominant, shadow-casting
-  // light; everything else is a much softer accent.
   const hemi = new HemisphericLight("warm-sky", new Vector3(0, 1, 0), scene);
-  hemi.intensity = 0.5;
-  hemi.diffuse = new Color3(1, 0.85, 0.72);
-  hemi.groundColor = new Color3(0.16, 0.2, 0.17);
-
-  const sun = new DirectionalLight("campus-sun", new Vector3(-0.55, -0.78, 0.32), scene);
-  sun.position = new Vector3(28, 42, -32);
-  sun.intensity = 2.1;
-  sun.diffuse = new Color3(1, 0.93, 0.82);
+  hemi.intensity = 0.85;
+  hemi.diffuse = new Color3(1, 0.82, 0.66);
+  hemi.groundColor = new Color3(0.12, 0.16, 0.13);
+  const sun = new DirectionalLight("sunset-sun", new Vector3(-0.4, -1, 0.3), scene);
+  sun.position = new Vector3(25, 40, -30);
+  sun.intensity = 1.1;
+  sun.diffuse = new Color3(1, 0.78, 0.58);
 
   const gatewayLight = new PointLight("gateway-amber", new Vector3(0, 4.5, -9.2), scene);
-  gatewayLight.diffuse = new Color3(1, 0.42, 0.18);
-  gatewayLight.specular = new Color3(1, 0.5, 0.25);
-  gatewayLight.intensity = 2.2;
+  gatewayLight.diffuse = new Color3(1, 0.34, 0.12);
+  gatewayLight.specular = new Color3(1, 0.48, 0.2);
+  gatewayLight.intensity = 8;
   gatewayLight.range = 18;
   const gatewayFill = new PointLight("gateway-fill", new Vector3(0, 2.8, -13), scene);
-  gatewayFill.diffuse = new Color3(0.95, 0.6, 0.38);
-  gatewayFill.intensity = 1.1;
+  gatewayFill.diffuse = new Color3(0.95, 0.55, 0.3);
+  gatewayFill.intensity = 4;
   gatewayFill.range = 13;
   const courtFill = new PointLight("court-fill", new Vector3(0, 6.5, 7), scene);
-  courtFill.diffuse = new Color3(1, 0.68, 0.45);
-  courtFill.intensity = 1.4;
+  courtFill.diffuse = new Color3(1, 0.62, 0.36);
+  courtFill.intensity = 5;
   courtFill.range = 28;
   const waterLightPositions = [new Vector3(-14, 2.2, -5), new Vector3(14, 2.2, -5), new Vector3(-14, 2.2, 9), new Vector3(14, 2.2, 9)];
   waterLightPositions.forEach((position, index) => {
     const waterLight = new PointLight(`water-court-glow-${index}`, position, scene);
-    waterLight.diffuse = new Color3(0.1, 0.6, 0.68);
-    waterLight.specular = new Color3(0.3, 0.75, 0.85);
-    waterLight.intensity = 0.9;
+    waterLight.diffuse = new Color3(0.1, 0.65, 0.72);
+    waterLight.specular = new Color3(0.3, 0.8, 0.9);
+    waterLight.intensity = 2.5;
     waterLight.range = 12;
   });
-
-  // Real shadow casting is the single biggest fix for the "blocky" read:
-  // it's what lets brick recesses, arches, and palm fronds show depth
-  // instead of every face looking like flat painted cardboard.
-  const shadowGenerator = new ShadowGenerator(2048, sun);
-  shadowGenerator.usePercentageCloserFiltering = true;
-  shadowGenerator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
-  shadowGenerator.bias = 0.0018;
-  shadowGenerator.normalBias = 0.025;
-  shadowGenerator.setDarkness(0.32);
-
-  const NON_CASTING_PREFIXES = ["campus-ground", "distant-campus-horizon", "central-plaza", "palm-avenue", "bridge-deck", "bridge-end", "water-"];
-  scene.meshes.forEach((mesh) => {
-    const isWater = mesh.name.startsWith("water-");
-    const isGroundLike = NON_CASTING_PREFIXES.some((prefix) => mesh.name.startsWith(prefix));
-    if (!isWater) mesh.receiveShadows = true;
-    if (!isWater && !isGroundLike) shadowGenerator.addShadowCaster(mesh, false);
-  });
-
-  // Real planar reflection for the water courts, replacing the flat alpha
-  // box + a few animated "glint" strips. A MirrorTexture renders the campus
-  // from the water's point of view every frame; a light adaptive blur keeps
-  // it looking like still water rather than a literal mirror.
-  const waterSurfaceLevel = 0.18;
-  const waterMirror = new MirrorTexture("water-court-mirror", { ratio: 0.5 }, scene, true);
-  waterMirror.mirrorPlane = Plane.FromPositionAndNormal(new Vector3(0, waterSurfaceLevel, 0), new Vector3(0, 1, 0));
-  waterMirror.renderList = scene.meshes.filter((mesh) => !mesh.name.startsWith("water-"));
-  waterMirror.adaptiveBlurKernel = 24;
-  waterMirror.level = 1;
-  water.reflectionTexture = waterMirror;
-  water.reflectionTexture.level = 0.6;
 
   const camera = new FreeCamera("operator-camera", new Vector3(0, 2.1, 34), scene);
   camera.attachControl(canvas, true);
@@ -658,34 +539,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   camera.ellipsoid = new Vector3(0.72, 1.0, 0.72);
   camera.rotation = new Vector3(0, Math.PI, 0);
   scene.activeCamera = camera;
-
-  // Post-processing pipeline: this is what was entirely missing before.
-  // SSAO shades in brick recesses/corners that direct light doesn't reach
-  // (the thing that makes photos of the real campus look "solid" instead of
-  // a cardboard cutout); bloom + FXAA + tonemapping give it a less flat,
-  // less videogame-default look. Kept subtle — this is a bright daytime
-  // scene, not a moody one.
-  const ssao = new SSAO2RenderingPipeline("campus-ssao", scene, {
-    ssaoRatio: 0.75,
-    blurRatio: 1,
-  }, [camera]);
-  ssao.radius = 2.2;
-  ssao.totalStrength = 1.1;
-  ssao.base = 0.05;
-  ssao.expensiveBlur = false;
-  ssao.samples = 16;
-
-  const pipeline = new DefaultRenderingPipeline("campus-pipeline", true, scene, [camera]);
-  pipeline.imageProcessingEnabled = false; // tonemapping already handled on scene.imageProcessingConfiguration
-  pipeline.fxaaEnabled = true;
-  pipeline.bloomEnabled = true;
-  pipeline.bloomThreshold = 0.82;
-  pipeline.bloomWeight = 0.25;
-  pipeline.bloomKernel = 48;
-  pipeline.bloomScale = 0.5;
-  pipeline.sharpenEnabled = true;
-  pipeline.sharpen.edgeAmount = 0.15;
-  pipeline.sharpen.colorAmount = 1;
 
   const weaponRoot = new TransformNode("operator-rifle", scene);
   weaponRoot.parent = camera;
@@ -736,13 +589,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   opticGlass.rotation.x = Math.PI / 2;
   opticGlass.position = new Vector3(0, 0.43, -0.205);
   opticGlass.material = weaponAccent;
-  // A small unlit, bloom-catching dot gives the sight a real holographic-
-  // reticle glow instead of the lens reading as a flat dark disc.
-  const reticleDot = MeshBuilder.CreateDisc("rifle-reticle", { radius: 0.018, tessellation: 16 }, scene);
-  reticleDot.parent = weaponRoot;
-  reticleDot.rotation.x = Math.PI / 2;
-  reticleDot.position = new Vector3(0, 0.43, -0.21);
-  reticleDot.material = reticleMat;
   const weaponMagazine = MeshBuilder.CreateBox("rifle-magazine", { width: 0.24, height: 0.58, depth: 0.22 }, scene);
   weaponMagazine.parent = weaponRoot;
   weaponMagazine.position = new Vector3(0, -0.48, 0.28);
@@ -768,7 +614,7 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   firingHand.position = new Vector3(0.18, -0.18, 0.42);
   firingHand.scaling = new Vector3(0.85, 0.7, 1.15);
   firingHand.material = glove;
-  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, muzzleBrake, frontSightPost, weaponStock, weaponGrip, weaponSight, opticGlass, reticleDot, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
+  const weaponMeshes = [weaponFrame, weaponSlide, weaponHandguard, weaponBarrel, muzzleBrake, frontSightPost, weaponStock, weaponGrip, weaponSight, opticGlass, weaponMagazine, supportForearm, supportHand, firingForearm, firingHand];
   weaponMeshes.forEach((mesh) => { mesh.isPickable = false; });
 
   let health = 1000;
@@ -819,8 +665,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
     body.parent = root;
     body.material = kind === "scout" ? scoutMat : kind === "heavy" ? heavyMat : enemyMat;
     body.metadata = { enemy: root };
-    body.receiveShadows = true;
-    shadowGenerator.addShadowCaster(body, false);
     const head = MeshBuilder.CreateSphere(`hostile-head-${seed}`, { diameter: 0.62, segments: 12 }, scene);
     head.position = new Vector3(0, 2.0, 0);
     head.parent = root;
@@ -875,12 +719,6 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement,
   startWave();
 
   const cleanup: Array<() => void> = [];
-  cleanup.push(() => {
-    shadowGenerator.dispose();
-    ssao.dispose();
-    pipeline.dispose();
-    waterMirror.dispose();
-  });
   const onPointerDown = (event: PointerEvent) => {
     if (gameOver) return;
     if (document.pointerLockElement !== canvas) {
